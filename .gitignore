@@ -86,6 +86,14 @@ subdir.mk
 .mxproject
 .stm32cubeide/
 
+# Visual Studio / MSBuild
+.vs/
+*.suo
+*.user
+*.VC.db
+*.VC.opendb
+CMakeSettings.json
+
 # Logs / temp / OS
 *.log
 *.tmp
@@ -93,6 +101,31 @@ subdir.mk
 Thumbs.db
 .DS_Store
 /tatus
+
+# Editor/tooling backups
+*.bak
+*~
+*.swp
+*.swo
+
+# CMake build artifacts (additional common paths)
+/build/
+/cmake-build-*/
+
+# IDE metadata
+.idea/
+.vscode/
+*.code-workspace
+
+# Clang tooling
+.clangd/
+.cache/
+
+# Additional STM32/ARM outputs
+*.lst
+*.axf
+*.srec
+*.ioc.bak
 
 
 
