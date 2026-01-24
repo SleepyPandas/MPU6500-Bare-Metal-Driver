@@ -1,3 +1,103 @@
+# STM32 build output directories
+/Debug/
+/Release/
+
+# STM32CubeMX / IDE artifacts
+*.cyclo
+*.list
+*.uvoptx
+*.uvprojx
+*.s19
+*.bin
+
+# Keep CubeMX configuration under version control
+!*.ioc
+
+# Prerequisites
+*.d
+
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+
+# Linker output
+*.ilk
+*.map
+*.exp
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.a
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.dll
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.exe
+*.out
+*.app
+*.i*86
+*.x86_64
+*.hex
+
+# Debug files
+*.dSYM/
+*.su
+*.idb
+*.pdb
+
+# Kernel Module Compile Results
+*.mod*
+*.cmd
+.tmp_versions/
+modules.order
+Module.symvers
+Mkfile.old
+dkms.conf
+
+# debug information files
+*.dwo
+
+# Generated make/deps
+objects.list
+objects.mk
+sources.mk
+subdir.mk
+
+# IDE metadata (STM32CubeIDE/Eclipse)
+.settings/
+.metadata/
+.externalToolBuilders/
+.loadpath
+*.launch
+.cproject
+.project
+.mxproject
+.stm32cubeide/
+
+# Logs / temp / OS
+*.log
+*.tmp
+~$*
+Thumbs.db
+.DS_Store
+/tatus
+
+
+
+#CMake build artifacts
+/build-*/
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
