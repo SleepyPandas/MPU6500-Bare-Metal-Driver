@@ -33,7 +33,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define MPU6500_PWR_MGMT_1 0x6B
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -74,10 +74,7 @@ static void MX_USART2_UART_Init(void);
 int main(void) {
 
   /* USER CODE BEGIN 1 */
-  HAL_StatusTypeDef MPU_6500_Status;
-  uint8_t WHO_AM_I = 0;
-  uint8_t SleepWake = 0xBF;
-  uint8_t MPU_Register_107 = 0;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -102,48 +99,6 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
-  /*here we check if MPU 6500 is listening*/
-
-  // DevAddres The device 7 bits address value left shifted
-  uint8_t DevAddress = 0x68 << 1;
-  // where the MPU-6500 WHO_AM_I register is located
-  uint8_t MemAddress = 0x75;
-  // arbitrary timeout value
-  uint32_t Timeout = 1000;
-  // HAL I2C read function, does the start sequence for SDA and SCL
-  // automatically
-
-  MPU_6500_Status =
-      HAL_I2C_Mem_Read(&hi2c1, DevAddress, MemAddress, I2C_MEMADD_SIZE_8BIT,
-                       &WHO_AM_I, 1, Timeout);
-
-  // Rwrite the Register to Wake the MPU-6500 up 6th bit Register 107 (6B) 1 to
-  // 0 to wake
-
-  // DevAddres The device 7 bits address value left shifted
-  DevAddress = 0x68 << 1;
-  // where the MPU-6500 PowerMang1 register is located
-  MemAddress = MPU6500_PWR_MGMT_1;
-  // arbitrary timeout value
-  Timeout = 1000;
-  //Read, Modify and Write register 6 to Wake Device
-  MPU_6500_Status =
-      HAL_I2C_Mem_Read(&hi2c1, DevAddress, MemAddress, I2C_MEMADD_SIZE_8BIT,
-                        &MPU_Register_107, 1, Timeout);
-
-  uint8_t wake = (MPU_Register_107 & SleepWake);
-  MPU_6500_Status =
-      HAL_I2C_Mem_Write(&hi2c1, DevAddress, MemAddress, I2C_MEMADD_SIZE_8BIT,
-                        &wake, 1, Timeout);
-
-  //verify if awoken
-  uint8_t status = 1;
-  MPU_6500_Status =
-      HAL_I2C_Mem_Read(&hi2c1, DevAddress, MemAddress, I2C_MEMADD_SIZE_8BIT,
-                        &status, 1, Timeout);
-  
-  
 
   /* USER CODE END 2 */
 
