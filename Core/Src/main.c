@@ -20,6 +20,7 @@
 #include "main.h"
 #include "stm32h5xx_hal_i2c.h"
 #include <stdint.h>
+#include "mpu6500.h"
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */

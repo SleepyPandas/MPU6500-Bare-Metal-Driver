@@ -4,7 +4,7 @@
 
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   HAL_StatusTypeDef mpu_status;
-  const uint16_t dev_address = (uint16_t)(MPU6500_I2C_ADDR << 1);
+  const uint16_t dev_address = MPU6500_I2C_ADDR << 1;
   const uint32_t timeout = 1000U;
   const uint8_t sleep_wake_mask = 0xBFU;
 
