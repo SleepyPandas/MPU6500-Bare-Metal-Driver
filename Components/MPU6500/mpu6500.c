@@ -29,14 +29,27 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
 
   wake = (uint8_t)(pwr_mgmt_1_value & sleep_wake_mask);
 
-  mpu_status =
-      HAL_I2C_Mem_Write(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                        I2C_MEMADD_SIZE_8BIT, &wake, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Write(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
+                                 I2C_MEMADD_SIZE_8BIT, &wake, 1, timeout);
 
   /* Verify wake status */
-  mpu_status =
-      HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                       I2C_MEMADD_SIZE_8BIT, &verify, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
+                                I2C_MEMADD_SIZE_8BIT, &verify, 1, timeout);
 
   return mpu_status;
+}
+
+/** 
+ * @param  scale: The desired MPU6500_ACC (2G,4G,8G,16G).
+ * @note default is 0x00, 2G
+ */
+
+HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
+                                        uint8_t range) {
+  // To be implemented
+}
+
+HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
+                                           uint8_t range) {
+  // To be implemented
 }
