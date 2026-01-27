@@ -75,7 +75,7 @@ static void MX_USART2_UART_Init(void);
 int main(void) {
 
   /* USER CODE BEGIN 1 */
-
+  uint8_t who_am_i = 0U;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -85,7 +85,7 @@ int main(void) {
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-
+  
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -100,7 +100,7 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_StatusTypeDef status = MPU6500_Init(&hi2c1, &who_am_i);
   /* USER CODE END 2 */
 
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no
