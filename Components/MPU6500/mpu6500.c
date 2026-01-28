@@ -1,10 +1,13 @@
 
 
 #include "mpu6500.h"
+#include "stm32h5xx_hal_def.h"
+#include "stm32h5xx_hal_i2c.h"
+#include <stdint.h>
 
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   HAL_StatusTypeDef mpu_status;
-  const uint16_t dev_address = MPU6500_I2C_ADDR << 1;
+  const uint16_t dev_address = MPU6500_I2C_ADDR;
   const uint32_t timeout = 1000U;
   const uint8_t sleep_wake_mask = 0xBFU;
 
@@ -39,16 +42,42 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   return mpu_status;
 }
 
-/** 
+/**
  * @param  scale: The desired MPU6500_ACC (2G,4G,8G,16G).
  * @note default is 0x00, 2G
  */
 
 HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
-                                        uint8_t range) {
-  // To be implemented
+                                        AccelRange range) {
+  // So we have to Create a bit Bask
+  const uint8_t acc_clear_mask = ~(uint8_t)0x18U;
+  HAL_StatusTypeDef mpu_status;
+  uint8_t MPU_GYRO_Data = 0U;
+
+  // Read, And, range OR , Write
+
+  mpu_status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                                I2C_MEMADD_SIZE_8BIT, &MPU_GYRO_Data, 1, 1000);
+  uint8_t AND_GYRO_Data = (MPU_GYRO_Data & acc_clear_mask);
+  
+  // experimenting way to error out
+  if (mpu_status == HAL_ERROR || mpu_status == HAL_TIMEOUT) {
+    return -1;
+  }
+
+  uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
+
+  mpu_status =
+      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                        I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1, 300);
+
+  return mpu_status;
 }
 
+/**
+ * @param  scale: The desired MPU6500_Rotation (250,500,1000,2000).
+ * @note default is 0x00, 250 deg/s
+ */
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            uint8_t range) {
   // To be implemented
