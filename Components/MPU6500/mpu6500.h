@@ -21,13 +21,25 @@ typedef enum {
   MPU6500_ACC_FS_16G = 0x18, // 0001 1000
 } AccelRange;
 
+typedef struct {
+  int16_t Accel_X;
+  int16_t Accel_Y;
+  int16_t Accel_Z;
+} MPU6500_Gyro_Data;
+
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i);
 
-HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c, AccelRange range);
+HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
+                                        AccelRange range);
 
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            uint8_t range);
 
+HAL_StatusTypeDef MPU6500_Read_Data(I2C_HandleTypeDef *hi2c,
+                                    uint16_t *Gyro_Data);
+
+HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
+                                          uint16_t *Accel_Data);
 #ifdef __cplusplus
 }
 #endif

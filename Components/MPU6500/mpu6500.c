@@ -59,7 +59,7 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   mpu_status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
                                 I2C_MEMADD_SIZE_8BIT, &MPU_GYRO_Data, 1, 1000);
   uint8_t AND_GYRO_Data = (MPU_GYRO_Data & acc_clear_mask);
-  
+
   // experimenting way to error out
   if (mpu_status == HAL_ERROR || mpu_status == HAL_TIMEOUT) {
     return -1;
@@ -81,4 +81,13 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            uint8_t range) {
   // To be implemented
+}
+
+
+HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c, uint16_t *Gyro_Data) {
+
+}
+
+HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c, uint16_t *Accel_Data) {
+
 }
