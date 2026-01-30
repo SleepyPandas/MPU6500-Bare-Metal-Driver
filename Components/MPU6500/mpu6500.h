@@ -22,10 +22,16 @@ typedef enum {
 } AccelRange;
 
 typedef struct {
+  int16_t Gyro_X;
+  int16_t Gyro_Y;
+  int16_t Gyro_Z;
+} MPU6500_Gyro_Data;
+
+typedef struct {
   int16_t Accel_X;
   int16_t Accel_Y;
   int16_t Accel_Z;
-} MPU6500_Gyro_Data;
+} MPU6500_Accel_Data;
 
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i);
 
