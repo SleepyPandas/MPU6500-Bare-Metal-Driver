@@ -6,6 +6,15 @@
 #include "stm32h5xx_hal_i2c.h"
 #include <stdint.h>
 
+/*Global Variables*/
+
+// Purpose of this struct is to hold the current configuration of the MPU6500
+// To be decoded when calculating data
+MPU6500_Config MPUConfig = {
+    .Accel_Setting = MPU6500_Accel_2G,
+    .Gyro_Setting = MPU6500_Gyro_250,
+};
+
 /*LOOK UP TABLES FOR Sensor Sensitivities */
 
 static float get_accel_sensitivity(Accel_Calculation sensitivity) {
@@ -34,7 +43,7 @@ static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
   case MPU6500_Gyro_2000:
     return 16.4f;
   default:
-    return 131.0;
+    return 131.0f;
   }
 }
 
@@ -82,19 +91,23 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
 
 HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
                                         Accel_Range range) {
-  // So we have to Create a bit Bask
-  const uint8_t acc_clear_mask = ~(uint8_t)0x18U;
+  // So we have to Create a bit Bask (Inverted register value) to clear the
+  // bits we want to change 0x18 = 0001 1000
+
+  const uint8_t inverted_range_mask = ~(uint8_t)range;
   HAL_StatusTypeDef mpu_status;
-  uint8_t MPU_ACCEL_Data = 0U;
+  // temporary variable to hold register data
+  uint8_t Current_Register_Data = 0U;
 
   // Read, And, range OR , Write
 
-  mpu_status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
-                                I2C_MEMADD_SIZE_8BIT, &MPU_ACCEL_Data, 1, 1000);
-  uint8_t AND_ACCEL_Data = (MPU_ACCEL_Data & acc_clear_mask);
+  mpu_status =
+      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+  // CLEAR DATA BITS
+  uint8_t AND_ACCEL_Data = (Current_Register_Data & inverted_range_mask);
 
-  // experimenting way to error out
-  if (mpu_status == HAL_ERROR || mpu_status == HAL_TIMEOUT) {
+  if (mpu_status != HAL_OK) {
     return -1;
   }
 
@@ -103,6 +116,13 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   mpu_status =
       HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
                         I2C_MEMADD_SIZE_8BIT, &Final_ACCEL_Data, 1, 300);
+
+  if (mpu_status != HAL_OK) {
+    return -1;
+  }
+
+  // Want to change the MPUConfig struct here to reflect new sensitivity
+  MPUConfig.Accel_Setting = range;
   return mpu_status;
 }
 
@@ -112,14 +132,41 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
  */
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            Gyro_Range range) {
-  // To be implemented
+  const uint8_t inverted_range_mask = ~(uint8_t)range;
+  HAL_StatusTypeDef mpu_status;
+  // temporary variable to hold register data
+  uint8_t Current_Register_Data = 0U;
+
+  // Read, And, range OR , Write
+
+  mpu_status =
+      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+  // CLEAR DATA BITS
+  uint8_t AND_GYRO_Data = (Current_Register_Data & inverted_range_mask);
+
+  if (mpu_status != HAL_OK) {
+    return -1;
+  }
+
+  uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
+
+  mpu_status =
+      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                        I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1, 300);
+  if (mpu_status != HAL_OK) {
+    return -1;
+  }
+
+  // Want to change the MPUConfig struct here to reflect new sensitivity
+  MPUConfig.Gyro_Setting = range;
+  return mpu_status;
 }
 
 HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
                                          MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
-  
 
   status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
                             I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);

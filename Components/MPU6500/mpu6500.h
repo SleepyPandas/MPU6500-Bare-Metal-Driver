@@ -63,11 +63,8 @@ typedef enum {
 } Gyro_Calculation;
 
 typedef struct {
-  // remember Null Terminator
-  char Accel_Config[3];
-  char Gyro_Config[5];
-  float Accel_Calculation;
-  float Gyro_Acceleration;
+  int Accel_Setting;
+  int Gyro_Setting;
 } MPU6500_Config;
 
 
