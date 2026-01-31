@@ -118,6 +118,9 @@ int main(void) {
     MPU6500_Read_Gyro_Data(&hi2c1, &Gyro_Data);
     MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
 
+    MPU6500_SetAccelRange(&hi2c1, MPU6500_ACC_SET_4G);
+    MPU6500_SetRotationRange(&hi2c1, MPU6500_Gyro_SET_1000);
+
     // SOUT
     sprintf(buffer, "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y |%7.4f|, Z |%7.4f| \r\n", Gyro_Data.Gyro_X,
             Gyro_Data.Gyro_Y, Gyro_Data.Gyro_Z, Accel_Data.Accel_X,
