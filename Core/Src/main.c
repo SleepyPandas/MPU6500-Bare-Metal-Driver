@@ -18,11 +18,12 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "mpu6500.h"
 #include "stm32h5xx_hal.h"
 #include "stm32h5xx_hal_def.h"
 #include "stm32h5xx_hal_i2c.h"
 #include <stdint.h>
-#include "mpu6500.h"
+
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
@@ -87,7 +88,7 @@ int main(void) {
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  
+  MPU6500_Init(&hi2c1, &who_am_i);
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -102,13 +103,8 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_StatusTypeDef status = MPU6500_Init(&hi2c1, &who_am_i);
-  HAL_StatusTypeDef test = MPU6500_SetAccelRange(&hi2c1, MPU6500_ACC_FS_16G); 
-
-  uint8_t Gyro_Reg = 0U;
-  HAL_Delay(100);
-  test = HAL_I2C_Mem_Read(&hi2c1,MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG, I2C_MEMADD_SIZE_8BIT, &Gyro_Reg, 1, 300);
-
+  MPU6500_Gyro_Data Gyro_Data = {0};
+  MPU6500_Accel_Data Accel_Data = {0};
   /* USER CODE END 2 */
 
   /* Initialize COM1 port (115200, 8 bits (7-bit data + 1 stop bit), no
@@ -127,7 +123,8 @@ int main(void) {
   while (1) {
 
     /* USER CODE END WHILE */
-
+    MPU6500_Read_Gyro_Data(&hi2c1, &Gyro_Data);
+    MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
