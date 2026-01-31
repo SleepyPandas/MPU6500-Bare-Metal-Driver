@@ -120,9 +120,26 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   if (mpu_status != HAL_OK) {
     return -1;
   }
-
+  int config = 0;
   // Want to change the MPUConfig struct here to reflect new sensitivity
-  MPUConfig.Accel_Setting = range;
+  switch (range) {
+
+  case (MPU6500_ACC_SET_2G):
+    config = MPU6500_Accel_2G;
+    break;
+  case (MPU6500_ACC_SET_4G):
+    config = MPU6500_Accel_4G;
+    break;
+  case (MPU6500_ACC_SET_8G):
+    config = MPU6500_Accel_8G;
+    break;
+  case (MPU6500_ACC_SET_16G):
+    config = MPU6500_Accel_16G;
+    break;
+  default:
+    config = MPU6500_Accel_2G;
+  }
+  MPUConfig.Accel_Setting = config;
   return mpu_status;
 }
 
@@ -159,7 +176,26 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
   }
 
   // Want to change the MPUConfig struct here to reflect new sensitivity
-  MPUConfig.Gyro_Setting = range;
+  int config = 0;
+  // Want to change the MPUConfig struct here to reflect new sensitivity
+  switch (range) {
+
+  case (MPU6500_Gyro_SET_250):
+    config = MPU6500_Gyro_250;
+    break;
+  case (MPU6500_Gyro_SET_500):
+    config = MPU6500_Gyro_500;
+    break;
+  case (MPU6500_Gyro_SET_1000):
+    config = MPU6500_Gyro_1000;
+    break;
+  case (MPU6500_Gyro_SET_2000):
+    config = MPU6500_Gyro_2000;
+    break;
+  default:
+    config = MPU6500_Gyro_250;
+  }
+  MPUConfig.Accel_Setting = config;
   return mpu_status;
 }
 
@@ -167,6 +203,7 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
                                          MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
+  float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
 
   status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
                             I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
@@ -181,9 +218,9 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
   Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
   Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
 
-  Gyro_Data->Gyro_X = (int16_t)(Gyro_Data->Gyro_X / 131.0);
-  Gyro_Data->Gyro_Y = (int16_t)(Gyro_Data->Gyro_Y / 131.0);
-  Gyro_Data->Gyro_Z = (int16_t)(Gyro_Data->Gyro_Z / 131.0);
+  Gyro_Data->Gyro_X = (int16_t)(Gyro_Data->Gyro_X / gyro_norm_const);
+  Gyro_Data->Gyro_Y = (int16_t)(Gyro_Data->Gyro_Y / gyro_norm_const);
+  Gyro_Data->Gyro_Z = (int16_t)(Gyro_Data->Gyro_Z / gyro_norm_const);
 
   return status;
 }
@@ -192,6 +229,7 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
                                           MPU6500_Accel_Data *Accel_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
+  float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
 
   status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
                             I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
@@ -208,9 +246,9 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
   combined_data_raw[1] = (int16_t)((raw_data[2] << 8) | raw_data[3]);
   combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
 
-  Accel_Data->Accel_X = (float)(combined_data_raw[0] / 16384.0f);
-  Accel_Data->Accel_Y = (float)(combined_data_raw[1] / 16384.0f);
-  Accel_Data->Accel_Z = (float)(combined_data_raw[2] / 16384.0f);
+  Accel_Data->Accel_X = (float)(combined_data_raw[0] / accel_norm_const);
+  Accel_Data->Accel_Y = (float)(combined_data_raw[1] / accel_norm_const);
+  Accel_Data->Accel_Z = (float)(combined_data_raw[2] / accel_norm_const);
 
   return status;
 }

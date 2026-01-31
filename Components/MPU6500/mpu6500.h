@@ -63,8 +63,8 @@ typedef enum {
 } Gyro_Calculation;
 
 typedef struct {
-  int Accel_Setting;
-  int Gyro_Setting;
+  Accel_Calculation Accel_Setting;
+  Gyro_Calculation Gyro_Setting;
 } MPU6500_Config;
 
 
