@@ -42,10 +42,10 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            uint8_t range);
 
 HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
-                                    uint16_t *Gyro_Data);
+                                    MPU6500_Gyro_Data *Gyro_Data);
 
 HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
-                                          uint16_t *Accel_Data);
+                                          MPU6500_Accel_Data *Accel_Data);
 #ifdef __cplusplus
 }
 #endif
