@@ -83,30 +83,54 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
   // To be implemented
 }
 
-
-HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c, MPU6500_Gyro_Data *Gyro_Data) {
+HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
+                                         MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
 
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
+                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
 
-  if (status == HAL_ERROR) return -1;
+  if (status != HAL_OK)
+    return status;
+
+  // Convert Raw Data into Gyro deg/s Acceleration
+  // Formula is Raw Gyro / Sensitivity Default it to 131.0 for now
 
   Gyro_Data->Gyro_X = (raw_data[0] << 8) | raw_data[1];
   Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
   Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
 
+  Gyro_Data->Gyro_X = (int16_t)(Gyro_Data->Gyro_X / 131.0);
+  Gyro_Data->Gyro_Y = (int16_t)(Gyro_Data->Gyro_Y / 131.0);
+  Gyro_Data->Gyro_Z = (int16_t)(Gyro_Data->Gyro_Z / 131.0);
+
+  return status;
 }
 
-HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c, MPU6500_Accel_Data *Accel_Data) {
+HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
+                                          MPU6500_Accel_Data *Accel_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
 
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
+                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
 
-  if (status == HAL_ERROR) return -1;
+  if (status != HAL_OK)
+    return status;
 
-  Accel_Data->Accel_X = (raw_data[0] << 8) | raw_data[1];
-  Accel_Data->Accel_Y = (raw_data[2] << 8) | raw_data[3];
-  Accel_Data->Accel_Z = (raw_data[4] << 8) | raw_data[5];
+  // Convert Raw Data into G's Acceleration
+  // Formula is Raw Accel / Sensitivity Default it to 2G for now
+
+  int16_t combined_data_raw[3] = {0};
+
+  combined_data_raw[0] = (int16_t)((raw_data[0] << 8) | raw_data[1]);
+  combined_data_raw[1] = (int16_t)((raw_data[2] << 8) | raw_data[3]);
+  combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
+
+  Accel_Data->Accel_X = (float)(combined_data_raw[0] / 16384.0f);
+  Accel_Data->Accel_Y = (float)(combined_data_raw[1] / 16384.0f);
+  Accel_Data->Accel_Z = (float)(combined_data_raw[2] / 16384.0f);
+
+  return status;
 }

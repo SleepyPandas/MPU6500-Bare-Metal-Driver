@@ -1,6 +1,7 @@
 #ifndef MPU6500_H
 #define MPU6500_H
 
+#include <math.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -32,9 +33,9 @@ typedef struct {
 } MPU6500_Gyro_Data;
 
 typedef struct {
-  int16_t Accel_X;
-  int16_t Accel_Y;
-  int16_t Accel_Z;
+  float Accel_X;
+  float Accel_Y;
+  float Accel_Z;
 } MPU6500_Accel_Data;
 
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i);
