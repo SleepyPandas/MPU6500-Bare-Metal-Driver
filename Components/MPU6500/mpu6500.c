@@ -1,9 +1,42 @@
 
 
 #include "mpu6500.h"
+#include "stm32_hal_legacy.h"
 #include "stm32h5xx_hal_def.h"
 #include "stm32h5xx_hal_i2c.h"
 #include <stdint.h>
+
+/*LOOK UP TABLES FOR Sensor Sensitivities */
+
+static float get_accel_sensitivity(Accel_Calculation sensitivity) {
+  switch (sensitivity) {
+  case MPU6500_Accel_2G:
+    return 16384.0f;
+  case MPU6500_Accel_4G:
+    return 8192.0f;
+  case MPU6500_Accel_8G:
+    return 4096.0f;
+  case MPU6500_Accel_16G:
+    return 2048.0f;
+  default:
+    return 16384.0f;
+  }
+}
+
+static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
+  switch (sensitivity) {
+  case MPU6500_Gyro_250:
+    return 131.0f;
+  case MPU6500_Gyro_500:
+    return 65.5f;
+  case MPU6500_Gyro_1000:
+    return 32.8f;
+  case MPU6500_Gyro_2000:
+    return 16.4f;
+  default:
+    return 131.0;
+  }
+}
 
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   HAL_StatusTypeDef mpu_status;
@@ -48,7 +81,7 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
  */
 
 HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
-                                        AccelRange range) {
+                                        Accel_Range range) {
   // So we have to Create a bit Bask
   const uint8_t acc_clear_mask = ~(uint8_t)0x18U;
   HAL_StatusTypeDef mpu_status;
@@ -79,7 +112,7 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
  * @note default is 0x00, 250 deg/s
  */
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
-                                           uint8_t range) {
+                                           Gyro_Range range) {
   // To be implemented
 }
 

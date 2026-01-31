@@ -20,11 +20,20 @@ extern "C" {
   0x43U // Registers 67 to 72 – Gyroscope Measurements
 
 typedef enum {
-  MPU6500_ACC_FS_2G = 0x00,
-  MPU6500_ACC_FS_4G = 0x08,  // 0000 1000
-  MPU6500_ACC_FS_8G = 0x10,  // 0001 0000
-  MPU6500_ACC_FS_16G = 0x18, // 0001 1000
-} AccelRange;
+  // Full Scale Select
+  MPU6500_ACC_SET_2G = 0x00,
+  MPU6500_ACC_SET_4G = 0x08,  // 0000 1000
+  MPU6500_ACC_SET_8G = 0x10,  // 0001 0000
+  MPU6500_ACC_SET_16G = 0x18, // 0001 1000
+} Accel_Range;
+
+typedef enum {
+  // Full Scale Select
+  MPU6500_Gyro_SET_250 = 0x00,
+  MPU6500_Gyro_SET_500 = 0x08,  // 0000 1000
+  MPU6500_Gyro_SET_1000 = 0x10, // 0001 0000
+  MPU6500_Gyro_SET_2000 = 0x18, // 0001 1000
+} Gyro_Range;
 
 typedef struct {
   int16_t Gyro_X;
@@ -38,13 +47,37 @@ typedef struct {
   float Accel_Z;
 } MPU6500_Accel_Data;
 
+typedef enum {
+  // Full-Scale Range,Sensitivity Scale Factor LSB/g
+  MPU6500_Accel_2G = 0,
+  MPU6500_Accel_4G,
+  MPU6500_Accel_8G,
+  MPU6500_Accel_16G,
+} Accel_Calculation;
+
+typedef enum {
+  MPU6500_Gyro_250 = 0,
+  MPU6500_Gyro_500,
+  MPU6500_Gyro_1000,
+  MPU6500_Gyro_2000,
+} Gyro_Calculation;
+
+typedef struct {
+  // remember Null Terminator
+  char Accel_Config[3];
+  char Gyro_Config[5];
+  float Accel_Calculation;
+  float Gyro_Acceleration;
+} MPU6500_Config;
+
+
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i);
 
 HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
-                                        AccelRange range);
+                                        Accel_Range range);
 
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
-                                           uint8_t range);
+                                           Gyro_Range range);
 
 HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
                                          MPU6500_Gyro_Data *Gyro_Data);
