@@ -119,7 +119,7 @@ int main(void) {
     MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
 
     // SOUT
-    sprintf(buffer, "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |Accel: X |%7.4f|, Y |%7.4f|, Z |%7.4f| \r\n", Gyro_Data.Gyro_X,
+    sprintf(buffer, "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y |%7.4f|, Z |%7.4f| \r\n", Gyro_Data.Gyro_X,
             Gyro_Data.Gyro_Y, Gyro_Data.Gyro_Z, Accel_Data.Accel_X,
             Accel_Data.Accel_Y, Accel_Data.Accel_Z);
 
