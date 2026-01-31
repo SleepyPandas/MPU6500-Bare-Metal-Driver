@@ -100,4 +100,13 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c, MPU6500_Gyro_D
 
 HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c, MPU6500_Accel_Data *Accel_Data) {
   uint8_t raw_data[6] = {0};
+  HAL_StatusTypeDef status;
+
+  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+
+  if (status == HAL_ERROR) return -1;
+
+  Accel_Data->Accel_X = (raw_data[0] << 8) | raw_data[1];
+  Accel_Data->Accel_Y = (raw_data[2] << 8) | raw_data[3];
+  Accel_Data->Accel_Z = (raw_data[4] << 8) | raw_data[5];
 }
