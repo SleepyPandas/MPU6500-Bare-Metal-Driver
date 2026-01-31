@@ -85,9 +85,19 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
 
 
 HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c, MPU6500_Gyro_Data *Gyro_Data) {
+  uint8_t raw_data[6] = {0};
+  HAL_StatusTypeDef status;
+
+  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+
+  if (status == HAL_ERROR) return -1;
+
+  Gyro_Data->Gyro_X = (raw_data[0] << 8) | raw_data[1];
+  Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
+  Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
 
 }
 
 HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c, MPU6500_Accel_Data *Accel_Data) {
-
+  uint8_t raw_data[6] = {0};
 }
