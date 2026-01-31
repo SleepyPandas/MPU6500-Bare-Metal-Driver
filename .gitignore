@@ -153,6 +153,7 @@ CMakeUserPresets.json
 .clangd
 TODO.md
 
+============= Python.gitignore ===============
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
