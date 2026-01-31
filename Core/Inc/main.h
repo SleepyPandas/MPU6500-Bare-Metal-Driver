@@ -31,7 +31,6 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "stm32h5xx_nucleo.h"
 #include <stdio.h>
 /* USER CODE END Includes */
 
