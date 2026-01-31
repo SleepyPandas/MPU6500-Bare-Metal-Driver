@@ -108,7 +108,11 @@ int main(void) {
   MPU6500_Init(&hi2c1, &who_am_i);
   MPU6500_Gyro_Data Gyro_Data = {0};
   MPU6500_Accel_Data Accel_Data = {0};
+  int8_t gyro_config[3] = {3};
   char buffer[200];
+
+  MPU6500_Gyro_Calibration(&hi2c1, gyro_config);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -118,8 +122,10 @@ int main(void) {
     MPU6500_Read_Gyro_Data(&hi2c1, &Gyro_Data);
     MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
 
-    MPU6500_SetAccelRange(&hi2c1, MPU6500_ACC_SET_4G);
-    MPU6500_SetRotationRange(&hi2c1, MPU6500_Gyro_SET_1000);
+    MPU6500_SetAccelRange(&hi2c1, MPU6500_ACC_SET_2G);
+    MPU6500_SetRotationRange(&hi2c1, MPU6500_Gyro_SET_250);
+
+    
 
     // SOUT
     sprintf(buffer, "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y |%7.4f|, Z |%7.4f| \r\n", Gyro_Data.Gyro_X,
