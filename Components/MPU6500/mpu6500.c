@@ -85,25 +85,24 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   // So we have to Create a bit Bask
   const uint8_t acc_clear_mask = ~(uint8_t)0x18U;
   HAL_StatusTypeDef mpu_status;
-  uint8_t MPU_GYRO_Data = 0U;
+  uint8_t MPU_ACCEL_Data = 0U;
 
   // Read, And, range OR , Write
 
-  mpu_status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                                I2C_MEMADD_SIZE_8BIT, &MPU_GYRO_Data, 1, 1000);
-  uint8_t AND_GYRO_Data = (MPU_GYRO_Data & acc_clear_mask);
+  mpu_status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                                I2C_MEMADD_SIZE_8BIT, &MPU_ACCEL_Data, 1, 1000);
+  uint8_t AND_ACCEL_Data = (MPU_ACCEL_Data & acc_clear_mask);
 
   // experimenting way to error out
   if (mpu_status == HAL_ERROR || mpu_status == HAL_TIMEOUT) {
     return -1;
   }
 
-  uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
+  uint8_t Final_ACCEL_Data = (AND_ACCEL_Data | range);
 
   mpu_status =
-      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                        I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1, 300);
-
+      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                        I2C_MEMADD_SIZE_8BIT, &Final_ACCEL_Data, 1, 300);
   return mpu_status;
 }
 
@@ -120,6 +119,7 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
                                          MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
   HAL_StatusTypeDef status;
+  
 
   status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
                             I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
