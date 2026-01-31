@@ -2,9 +2,12 @@
 
 #include "mpu6500.h"
 #include "stm32_hal_legacy.h"
+#include "stm32h5xx_hal.h"
 #include "stm32h5xx_hal_def.h"
 #include "stm32h5xx_hal_i2c.h"
+#include <math.h>
 #include <stdint.h>
+#include <string.h>
 
 /*Global Variables*/
 
@@ -13,6 +16,7 @@
 MPU6500_Config MPUConfig = {
     .Accel_Setting = MPU6500_Accel_2G,
     .Gyro_Setting = MPU6500_Gyro_250,
+    .Gyro_Offset_Calibration = {0, 0, 0},
 };
 
 /*LOOK UP TABLES FOR Sensor Sensitivities */
@@ -94,7 +98,8 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   // So we have to Create a bit Bask (Inverted register value) to clear the
   // bits we want to change 0x18 = 0001 1000
 
-  const uint8_t inverted_range_mask = ~(uint8_t)range;
+  // ~0x18 = 0xE7 (1110 0111)                                        
+  const uint8_t inverted_range_mask = 0xE7;
   HAL_StatusTypeDef mpu_status;
   // temporary variable to hold register data
   uint8_t Current_Register_Data = 0U;
@@ -149,7 +154,9 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
  */
 HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
                                            Gyro_Range range) {
-  const uint8_t inverted_range_mask = ~(uint8_t)range;
+  // ~0x18 = 0xE7 (1110 0111)                                        
+  const uint8_t inverted_range_mask = 0xE7;
+
   HAL_StatusTypeDef mpu_status;
   // temporary variable to hold register data
   uint8_t Current_Register_Data = 0U;
@@ -157,7 +164,7 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
   // Read, And, range OR , Write
 
   mpu_status =
-      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
                        I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
   // CLEAR DATA BITS
   uint8_t AND_GYRO_Data = (Current_Register_Data & inverted_range_mask);
@@ -218,9 +225,9 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
   Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
   Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
 
-  Gyro_Data->Gyro_X = (int16_t)(Gyro_Data->Gyro_X / gyro_norm_const);
-  Gyro_Data->Gyro_Y = (int16_t)(Gyro_Data->Gyro_Y / gyro_norm_const);
-  Gyro_Data->Gyro_Z = (int16_t)(Gyro_Data->Gyro_Z / gyro_norm_const);
+  Gyro_Data->Gyro_X = (int16_t)((Gyro_Data->Gyro_X / gyro_norm_const) + MPUConfig.Gyro_Offset_Calibration[0]);
+  Gyro_Data->Gyro_Y = (int16_t)((Gyro_Data->Gyro_Y / gyro_norm_const) + MPUConfig.Gyro_Offset_Calibration[1]);
+  Gyro_Data->Gyro_Z = (int16_t)((Gyro_Data->Gyro_Z / gyro_norm_const) + MPUConfig.Gyro_Offset_Calibration[2]);
 
   return status;
 }
@@ -252,3 +259,42 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
 
   return status;
 }
+
+HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
+                                           int8_t return_offset[3]) {
+  /* 1. Read the data for about 100 ms hold that in an array
+  2. calculate the average offset for X Y Z and write that to
+  3. mpu6500 CONFIG*/
+  MPU6500_Gyro_Data gyro_data;
+  int32_t accumulator_data[3] = {0};
+  HAL_StatusTypeDef status;
+  int8_t offset_data[3];
+
+  // We choose 1024 Samples for calibration noise Reduces at sqrt(N)
+  for (int i = 0; i < 512; i++) {
+    status = MPU6500_Read_Gyro_Data(hi2c, &gyro_data);
+    if (status == HAL_OK) {
+      accumulator_data[0] += gyro_data.Gyro_X;
+      accumulator_data[1] += gyro_data.Gyro_Y;
+      accumulator_data[2] += gyro_data.Gyro_Z;
+    } else {
+      return status;
+    }
+    HAL_Delay(1);
+  }
+
+offset_data[0] = (int8_t)roundf(-1.0f * ((float)accumulator_data[0] / 512.0f));
+offset_data[1] = (int8_t)roundf(-1.0f * ((float)accumulator_data[1] / 512.0f));
+offset_data[2] = (int8_t)roundf(-1.0f * ((float)accumulator_data[2] / 512.0f));
+
+  if (return_offset != NULL) {
+    memcpy(return_offset, offset_data, sizeof(offset_data));
+  }
+
+  memcpy(MPUConfig.Gyro_Offset_Calibration, offset_data,
+         sizeof(MPUConfig.Gyro_Offset_Calibration));
+
+  return status;
+}
+
+// returns offset as a int array otherwise -1

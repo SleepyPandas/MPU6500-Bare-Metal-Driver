@@ -65,6 +65,7 @@ typedef enum {
 typedef struct {
   Accel_Calculation Accel_Setting;
   Gyro_Calculation Gyro_Setting;
+  int8_t Gyro_Offset_Calibration[3];
 } MPU6500_Config;
 
 
@@ -81,6 +82,8 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
 
 HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
                                           MPU6500_Accel_Data *Accel_Data);
+
+HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c, int8_t return_offset[3]); 
 #ifdef __cplusplus
 }
 #endif
