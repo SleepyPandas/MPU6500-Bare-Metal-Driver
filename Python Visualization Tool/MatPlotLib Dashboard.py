@@ -12,13 +12,14 @@ import threading
 
 try:
     from stl import mesh as stl_mesh
+
     STL_AVAILABLE = True
 except Exception:
     stl_mesh = None
     STL_AVAILABLE = False
 
 # --- CONFIGURATION ---
-SERIAL_PORT = 'COM3'
+SERIAL_PORT = "COM3"
 BAUD_RATE = 115200
 MAX_POINTS = 100
 UPDATE_INTERVAL_MS = 75
@@ -42,19 +43,22 @@ THEME = {
     "z": "#ffd166",
 }
 
-plt.rcParams.update({
-    "figure.facecolor": THEME["fig_bg"],
-    "axes.facecolor": THEME["ax_bg"],
-    "axes.edgecolor": THEME["grid"],
-    "axes.labelcolor": THEME["text"],
-    "xtick.color": THEME["muted"],
-    "ytick.color": THEME["muted"],
-    "text.color": THEME["text"],
-    "grid.color": THEME["grid"],
-    "grid.alpha": 0.6,
-    "grid.linestyle": "--",
-    "grid.linewidth": 0.6,
-})
+plt.rcParams.update(
+    {
+        "figure.facecolor": THEME["fig_bg"],
+        "axes.facecolor": THEME["ax_bg"],
+        "axes.edgecolor": THEME["grid"],
+        "axes.labelcolor": THEME["text"],
+        "xtick.color": THEME["muted"],
+        "ytick.color": THEME["muted"],
+        "text.color": THEME["text"],
+        "grid.color": THEME["grid"],
+        "grid.alpha": 0.6,
+        "grid.linestyle": "--",
+        "grid.linewidth": 0.6,
+    }
+)
+
 
 def style_axis(ax, title):
     ax.set_facecolor(THEME["ax_bg"])
@@ -65,12 +69,14 @@ def style_axis(ax, title):
     ax.grid(True)
     ax.set_axisbelow(True)
 
+
 def style_legend(ax):
     legend = ax.legend(loc="upper right", fontsize="x-small", frameon=True)
     legend.get_frame().set_facecolor(THEME["ax_bg"])
     legend.get_frame().set_edgecolor(THEME["grid"])
     for text in legend.get_texts():
         text.set_color(THEME["text"])
+
 
 def style_axis_3d(ax):
     ax.set_facecolor(THEME["ax_bg"])
@@ -93,6 +99,7 @@ def style_axis_3d(ax):
             pass
     ax.grid(False)
 
+
 def rotation_matrix(angles):
     rx, ry, rz = angles
     cx, sx = math.cos(rx), math.sin(rx)
@@ -103,6 +110,7 @@ def rotation_matrix(angles):
     rot_y = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
     rot_z = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
     return rot_z @ rot_y @ rot_x
+
 
 def setup_stl_axis(ax):
     global stl_base_vectors, stl_collection
@@ -141,10 +149,11 @@ def setup_stl_axis(ax):
 
     stl_collection = Poly3DCollection(
         stl_base_vectors,
-        facecolor=THEME["accent"],
-        edgecolor=THEME["grid"],
-        linewidths=0.2,
-        alpha=0.9,
+        facecolors=THEME["accent"],
+        edgecolors=None,
+        linewidths=0,  
+        shade=True,  
+        alpha=1.0,
     )
     ax.add_collection3d(stl_collection)
 
@@ -155,6 +164,7 @@ def setup_stl_axis(ax):
     ax.set_zlim(-limit, limit)
     ax.set_box_aspect((1, 1, 1))
     ax.view_init(elev=20, azim=45)
+
 
 def update_stl_rotation(gx, gy, gz, dt):
     global gyro_smoothed, orientation
@@ -171,14 +181,15 @@ def update_stl_rotation(gx, gy, gz, dt):
     rotated = stl_base_vectors.reshape(-1, 3) @ rot.T
     stl_collection.set_verts(rotated.reshape(stl_base_vectors.shape))
 
-# --- DATA BUFFERS ---
-gyro_x = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
-gyro_y = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
-gyro_z = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
 
-accel_x = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
-accel_y = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
-accel_z = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
+# --- DATA BUFFERS ---
+gyro_x = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
+gyro_y = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
+gyro_z = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
+
+accel_x = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
+accel_y = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
+accel_z = deque([0] * MAX_POINTS, maxlen=MAX_POINTS)
 
 x_axis = deque(range(MAX_POINTS), maxlen=MAX_POINTS)
 
@@ -197,13 +208,14 @@ except Exception as e:
     print(f"Error: {e}")
     exit()
 
+
 # --- PARSING FUNCTION ---
 def parse_line(line):
     # Split the line by the pipe symbol
-    parts = line.split('|')
-    
+    parts = line.split("|")
+
     # DEBUG: Uncomment the next line if the graph is still flat to see what Python sees
-    # print(f"Split parts: {parts}") 
+    # print(f"Split parts: {parts}")
 
     # We need at least 13 parts to have all the data
     if len(parts) < 13:
@@ -215,19 +227,20 @@ def parse_line(line):
         gx = int(parts[1].strip())
         gy = int(parts[3].strip())
         gz = int(parts[5].strip())
-        
+
         # --- ACCEL INDICES (FIXED) ---
-        # Previous error: I thought these were at 9,11,13. 
+        # Previous error: I thought these were at 9,11,13.
         # Correct indices are 8, 10, 12 based on your C code.
-        ax = float(parts[8].strip()) 
+        ax = float(parts[8].strip())
         ay = float(parts[10].strip())
         az = float(parts[12].strip())
-        
+
         return gx, gy, gz, ax, ay, az
     except Exception as e:
         # This prints errors to the console so you know if data is bad
         print(f"Parse Error on line: {line}\nReason: {e}")
         return None
+
 
 # --- UPDATE FUNCTION ---
 def update_graph(frame):
@@ -239,21 +252,21 @@ def update_graph(frame):
     while ser.in_waiting > 0:
         try:
             raw_line = ser.readline()
-            line = raw_line.decode('utf-8', errors='ignore').strip()
-            
+            line = raw_line.decode("utf-8", errors="ignore").strip()
+
             data = parse_line(line)
-            
+
             if data:
                 gx, gy, gz, ax, ay, az = data
-                
+
                 gyro_x.append(gx)
                 gyro_y.append(gy)
                 gyro_z.append(gz)
-                
+
                 accel_x.append(ax)
                 accel_y.append(ay)
                 accel_z.append(az)
-                
+
         except Exception as e:
             print(f"Serial Error: {e}")
 
@@ -276,7 +289,6 @@ def update_graph(frame):
     ax1.tick_params(labelbottom=True)
     style_legend(ax1)
 
-
     # -- Draw Accel --
     ax2.clear()
     ax2.plot(accel_x, label="X", color=THEME["x"], linewidth=1.6, alpha=0.95)
@@ -286,6 +298,7 @@ def update_graph(frame):
     ax2.set_ylabel("g-forces")
     ax2.set_xlabel("Time (samples)")
     style_legend(ax2)
+
 
 # --- PLOT SETUP ---
 fig = plt.figure(figsize=(13, 7))
