@@ -107,21 +107,6 @@ def mock_line() -> str:
     )
 
 
-def aim_spot_light(
-    light,
-    position: tuple[float, float, float],
-    target: tuple[float, float, float] = (0.0, 0.0, 0.0),
-) -> None:
-    dx = target[0] - position[0]
-    dy = target[1] - position[1]
-    dz = target[2] - position[2]
-    length = math.sqrt(dx * dx + dy * dy + dz * dz) or 1.0
-    vx, vy, vz = dx / length, dy / length, dz / length
-    r_y = math.asin(-vz)
-    r_z = math.atan2(vy, vx)
-    light.move(*position).rotate(0.0, r_y, r_z)
-
-
 def serial_worker() -> None:
     if MOCK_DATA:
         while not stop_event.is_set():
