@@ -103,6 +103,17 @@ def mock_line() -> str:
     )
 
 
+def aim_spot_light(light, position: tuple[float, float, float], target: tuple[float, float, float] = (0.0, 0.0, 0.0)) -> None:
+    dx = target[0] - position[0]
+    dy = target[1] - position[1]
+    dz = target[2] - position[2]
+    length = math.sqrt(dx * dx + dy * dy + dz * dz) or 1.0
+    vx, vy, vz = dx / length, dy / length, dz / length
+    r_y = math.asin(-vz)
+    r_z = math.atan2(vy, vx)
+    light.move(*position).rotate(0.0, r_y, r_z)
+
+
 def serial_worker() -> None:
     if MOCK_DATA:
         while True:
@@ -225,24 +236,23 @@ with ui.grid(columns=2).classes("w-full gap-6 items-start"):
         with ui.card().classes("panel w-full"):
             ui.label("Gyroscope Data").classes("panel-title")
             gyro_chart = (
-                ui.echart(chart_options()).classes("w-full").style("height: 260px;")
+                ui.echart(chart_options()).classes("w-full").style("height: 400px;")
             )
         with ui.card().classes("panel w-full"):
             ui.label("Accelerometer Data").classes("panel-title")
             accel_chart = (
-                ui.echart(chart_options()).classes("w-full").style("height: 260px;")
+                ui.echart(chart_options()).classes("w-full").style("height: 400px;")
             )
 
     # RIGHT COLUMN: 3D Model & Video Placeholder
     with ui.column().classes("w-full gap-6"):
         with ui.card().classes("panel w-full"):
             ui.label("3D STL Model").classes("panel-title")
-            with ui.scene(height=260, grid=False, background_color="#404241").classes(
+            with ui.scene(height=400, grid=False, background_color="#0a0a0a").classes(
                 "w-full"
             ) as scene:
 
-                # Load the duck. Adjust key/scale as needed
-
+                # Load the model. Adjust key/scale as needed
 
                 scene.stl("/stls/AnthonyHua.stl").material("#ff9100").scale(0.05)
                 scene.cylinder(0.2, 0.2, 2).move(x=0.6).rotate(0, 0, 1.5).material("#ff4444").scale(0.55)  # X-axis marker
