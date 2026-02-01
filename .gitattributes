@@ -1,0 +1,2 @@
+# STM32 vendor components should be hidden from exports and linguist stats
+Drivers/** linguist-vendored
