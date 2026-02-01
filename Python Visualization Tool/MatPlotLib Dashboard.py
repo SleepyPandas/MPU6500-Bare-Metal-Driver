@@ -7,7 +7,50 @@ import threading
 # --- CONFIGURATION ---
 SERIAL_PORT = 'COM3'
 BAUD_RATE = 115200
-MAX_POINTS = 100 
+MAX_POINTS = 100
+
+# --- THEME ---
+THEME = {
+    "fig_bg": "#0b1020",
+    "ax_bg": "#0f172a",
+    "grid": "#25324a",
+    "text": "#e2e8f0",
+    "muted": "#94a3b8",
+    "accent": "#5ecbff",
+    "x": "#ff6b6b",
+    "y": "#5ad4e6",
+    "z": "#ffd166",
+}
+
+plt.rcParams.update({
+    "figure.facecolor": THEME["fig_bg"],
+    "axes.facecolor": THEME["ax_bg"],
+    "axes.edgecolor": THEME["grid"],
+    "axes.labelcolor": THEME["text"],
+    "xtick.color": THEME["muted"],
+    "ytick.color": THEME["muted"],
+    "text.color": THEME["text"],
+    "grid.color": THEME["grid"],
+    "grid.alpha": 0.6,
+    "grid.linestyle": "--",
+    "grid.linewidth": 0.6,
+})
+
+def style_axis(ax, title):
+    ax.set_facecolor(THEME["ax_bg"])
+    ax.set_title(title, color=THEME["accent"], pad=10, fontsize=12, fontweight="bold")
+    ax.tick_params(colors=THEME["muted"])
+    for spine in ax.spines.values():
+        spine.set_color(THEME["grid"])
+    ax.grid(True)
+    ax.set_axisbelow(True)
+
+def style_legend(ax):
+    legend = ax.legend(loc="upper right", fontsize="x-small", frameon=True)
+    legend.get_frame().set_facecolor(THEME["ax_bg"])
+    legend.get_frame().set_edgecolor(THEME["grid"])
+    for text in legend.get_texts():
+        text.set_color(THEME["text"])
 
 # --- DATA BUFFERS ---
 gyro_x = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
@@ -86,27 +129,32 @@ def update_graph(frame):
 
     # -- Draw Gyro --
     ax1.clear()
-    ax1.plot(gyro_x, label='X', color='red')
-    ax1.plot(gyro_y, label='Y', color='green')
-    ax1.plot(gyro_z, label='Z', color='blue')
-    ax1.set_title("Gyroscope Data")
-    ax1.legend(loc='upper right', fontsize='x-small')
-    ax1.grid(True, linestyle=':', alpha=0.6)
+    ax1.plot(gyro_x, label="X", color=THEME["x"], linewidth=1.6, alpha=0.95)
+    ax1.plot(gyro_y, label="Y", color=THEME["y"], linewidth=1.6, alpha=0.95)
+    ax1.plot(gyro_z, label="Z", color=THEME["z"], linewidth=1.6, alpha=0.95)
+    ax1.set_ylabel("Degrees/sec")
+    ax1.set_xlabel("Time (samples)")
+    style_axis(ax1, "Gyroscope Data")
+    ax1.tick_params(labelbottom=True)
+    style_legend(ax1)
+
 
     # -- Draw Accel --
     ax2.clear()
-    ax2.plot(accel_x, label='X', color='red')
-    ax2.plot(accel_y, label='Y', color='green')
-    ax2.plot(accel_z, label='Z', color='blue')
-    ax2.set_title("Accelerometer Data")
-    ax2.legend(loc='upper right', fontsize='x-small')
-    ax2.grid(True, linestyle=':', alpha=0.6)
+    ax2.plot(accel_x, label="X", color=THEME["x"], linewidth=1.6, alpha=0.95)
+    ax2.plot(accel_y, label="Y", color=THEME["y"], linewidth=1.6, alpha=0.95)
+    ax2.plot(accel_z, label="Z", color=THEME["z"], linewidth=1.6, alpha=0.95)
+    style_axis(ax2, "Accelerometer Data")
+    ax2.set_ylabel("g-forces")
+    ax2.set_xlabel("Time (samples)")
+    style_legend(ax2)
 
 # --- PLOT SETUP ---
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
-plt.subplots_adjust(hspace=0.3) 
+fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+fig.patch.set_facecolor(THEME["fig_bg"])
+plt.subplots_adjust(hspace=0.28, top=0.93)
 
-ani = animation.FuncAnimation(fig, update_graph, interval=50)
+ani = animation.FuncAnimation(fig, update_graph, interval=1)
 plt.show()
 
 ser.close()
