@@ -242,7 +242,12 @@ with ui.grid(columns=2).classes("w-full gap-6 items-start"):
             ) as scene:
 
                 # Load the duck. Adjust key/scale as needed
-                scene.stl("/stls/AnthonyHua.stl").material("#ff9100")
+
+
+                scene.stl("/stls/AnthonyHua.stl").material("#ff9100").scale(0.05)
+                scene.cylinder(0.2, 0.2, 2).move(x=0.6).rotate(0, 0, 1.5).material("#ff4444").scale(0.55)  # X-axis marker
+                scene.cylinder(0.2, 0.2, 2).move(y=0.6).material("#44ff44").scale(0.55)  # Y-axis marker
+                scene.cylinder(0.2, 0.2, 2).move(z=0.6).rotate(1.5, 0, 0).material("#4444ff").scale(0.55)  # Z-axis marker
                 scene.move_camera(0, -10, 5)
 
         # Video Placeholder
