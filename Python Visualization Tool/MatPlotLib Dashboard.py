@@ -1,13 +1,33 @@
+import math
+import time
+from pathlib import Path
+
+import numpy as np
 import serial
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from collections import deque
 import threading
+
+try:
+    from stl import mesh as stl_mesh
+    STL_AVAILABLE = True
+except Exception:
+    stl_mesh = None
+    STL_AVAILABLE = False
 
 # --- CONFIGURATION ---
 SERIAL_PORT = 'COM3'
 BAUD_RATE = 115200
 MAX_POINTS = 100
+UPDATE_INTERVAL_MS = 75
+
+STL_PATH = Path(__file__).parent / "STLS" / "AnthonyHua.stl"
+STL_TARGET_SIZE = 2.0
+GYRO_SCALE = 1.0
+GYRO_DPS_TO_RADS = math.pi / 180.0
+GYRO_SMOOTHING = 0.2
 
 # --- THEME ---
 THEME = {
@@ -52,6 +72,105 @@ def style_legend(ax):
     for text in legend.get_texts():
         text.set_color(THEME["text"])
 
+def style_axis_3d(ax):
+    ax.set_facecolor(THEME["ax_bg"])
+    ax.set_title(
+        "STL Orientation (Gyro)",
+        color=THEME["accent"],
+        pad=10,
+        fontsize=12,
+        fontweight="bold",
+    )
+    ax.tick_params(colors=THEME["muted"])
+    ax.set_xticks([])
+    ax.set_yticks([])
+    ax.set_zticks([])
+    for axis in (ax.xaxis, ax.yaxis, ax.zaxis):
+        try:
+            axis.pane.set_facecolor(THEME["ax_bg"])
+            axis.pane.set_edgecolor(THEME["grid"])
+        except Exception:
+            pass
+    ax.grid(False)
+
+def rotation_matrix(angles):
+    rx, ry, rz = angles
+    cx, sx = math.cos(rx), math.sin(rx)
+    cy, sy = math.cos(ry), math.sin(ry)
+    cz, sz = math.cos(rz), math.sin(rz)
+
+    rot_x = np.array([[1, 0, 0], [0, cx, -sx], [0, sx, cx]])
+    rot_y = np.array([[cy, 0, sy], [0, 1, 0], [-sy, 0, cy]])
+    rot_z = np.array([[cz, -sz, 0], [sz, cz, 0], [0, 0, 1]])
+    return rot_z @ rot_y @ rot_x
+
+def setup_stl_axis(ax):
+    global stl_base_vectors, stl_collection
+    style_axis_3d(ax)
+
+    if not STL_AVAILABLE:
+        ax.text2D(
+            0.05,
+            0.92,
+            "Install numpy-stl to load STL",
+            transform=ax.transAxes,
+            color=THEME["muted"],
+            fontsize=10,
+        )
+        return
+
+    if not STL_PATH.exists():
+        ax.text2D(
+            0.05,
+            0.92,
+            f"STL not found: {STL_PATH}",
+            transform=ax.transAxes,
+            color=THEME["muted"],
+            fontsize=10,
+        )
+        return
+
+    mesh = stl_mesh.Mesh.from_file(str(STL_PATH))
+    vectors = mesh.vectors
+    vertices = vectors.reshape(-1, 3)
+    center = vertices.mean(axis=0)
+    vertices_centered = vertices - center
+    max_range = np.ptp(vertices_centered, axis=0).max()
+    scale = STL_TARGET_SIZE / max_range if max_range > 0 else 1.0
+    stl_base_vectors = (vertices_centered * scale).reshape(vectors.shape)
+
+    stl_collection = Poly3DCollection(
+        stl_base_vectors,
+        facecolor=THEME["accent"],
+        edgecolor=THEME["grid"],
+        linewidths=0.2,
+        alpha=0.9,
+    )
+    ax.add_collection3d(stl_collection)
+
+    extent = np.max(np.abs(stl_base_vectors))
+    limit = max(extent * 1.15, 0.5)
+    ax.set_xlim(-limit, limit)
+    ax.set_ylim(-limit, limit)
+    ax.set_zlim(-limit, limit)
+    ax.set_box_aspect((1, 1, 1))
+    ax.view_init(elev=20, azim=45)
+
+def update_stl_rotation(gx, gy, gz, dt):
+    global gyro_smoothed, orientation
+    if stl_collection is None or stl_base_vectors is None:
+        return
+
+    rates = np.array([gx, gy, gz], dtype=float)
+    rates = rates * GYRO_SCALE * GYRO_DPS_TO_RADS
+    gyro_smoothed = (1 - GYRO_SMOOTHING) * gyro_smoothed + GYRO_SMOOTHING * rates
+    orientation += gyro_smoothed * dt
+    orientation = (orientation + math.pi) % (2 * math.pi) - math.pi
+
+    rot = rotation_matrix(orientation)
+    rotated = stl_base_vectors.reshape(-1, 3) @ rot.T
+    stl_collection.set_verts(rotated.reshape(stl_base_vectors.shape))
+
 # --- DATA BUFFERS ---
 gyro_x = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
 gyro_y = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
@@ -62,6 +181,12 @@ accel_y = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
 accel_z = deque([0]*MAX_POINTS, maxlen=MAX_POINTS)
 
 x_axis = deque(range(MAX_POINTS), maxlen=MAX_POINTS)
+
+gyro_smoothed = np.zeros(3, dtype=float)
+orientation = np.zeros(3, dtype=float)
+last_update_time = time.perf_counter()
+stl_base_vectors = None
+stl_collection = None
 
 # --- SERIAL CONNECTION ---
 try:
@@ -106,6 +231,11 @@ def parse_line(line):
 
 # --- UPDATE FUNCTION ---
 def update_graph(frame):
+    global last_update_time
+    now = time.perf_counter()
+    dt = max(now - last_update_time, 1e-3)
+    last_update_time = now
+
     while ser.in_waiting > 0:
         try:
             raw_line = ser.readline()
@@ -126,6 +256,14 @@ def update_graph(frame):
                 
         except Exception as e:
             print(f"Serial Error: {e}")
+
+    if gyro_x:
+        gx = gyro_x[-1]
+        gy = gyro_y[-1]
+        gz = gyro_z[-1]
+    else:
+        gx = gy = gz = 0.0
+    update_stl_rotation(gx, gy, gz, dt)
 
     # -- Draw Gyro --
     ax1.clear()
@@ -150,11 +288,23 @@ def update_graph(frame):
     style_legend(ax2)
 
 # --- PLOT SETUP ---
-fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+fig = plt.figure(figsize=(13, 7))
 fig.patch.set_facecolor(THEME["fig_bg"])
-plt.subplots_adjust(hspace=0.28, top=0.93)
+grid = fig.add_gridspec(
+    2,
+    2,
+    width_ratios=[1.1, 1.0],
+    height_ratios=[1, 1],
+    wspace=0.18,
+    hspace=0.28,
+)
 
-ani = animation.FuncAnimation(fig, update_graph, interval=1)
+ax1 = fig.add_subplot(grid[0, 0])
+ax2 = fig.add_subplot(grid[1, 0], sharex=ax1)
+ax3 = fig.add_subplot(grid[:, 1], projection="3d")
+setup_stl_axis(ax3)
+
+ani = animation.FuncAnimation(fig, update_graph, interval=UPDATE_INTERVAL_MS)
 plt.show()
 
 ser.close()
