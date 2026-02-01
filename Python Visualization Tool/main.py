@@ -237,11 +237,15 @@ with ui.grid(columns=2).classes("w-full gap-6 items-start"):
     with ui.column().classes("w-full gap-6"):
         with ui.card().classes("panel w-full"):
             ui.label("3D STL Model").classes("panel-title")
-            with ui.scene(height=260).classes("w-full bg-transparent") as scene:
+            with ui.scene(height=260, grid=False, background_color="#404241").classes(
+                "w-full"
+            ) as scene:
+
                 # Load the duck. Adjust key/scale as needed
-                scene.stl("/stls/AnthonyHua.stl").material("#d1d5db")
+                scene.stl("/stls/AnthonyHua.stl").material("#ff9100")
                 scene.move_camera(0, -10, 5)
 
+        # Video Placeholder
         with ui.card().classes("panel w-full"):
             ui.label("Video Feed (Placeholder)").classes("panel-title")
             with ui.element("div").classes(
