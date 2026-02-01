@@ -89,7 +89,6 @@ def ingest_line(line: str) -> None:
         accel_data["y"].append(parsed["ay"])
         accel_data["z"].append(parsed["az"])
 
-
 def moving_average(values: deque[float], window: int) -> float:
     if not values:
         return 0.0
@@ -241,7 +240,7 @@ body {
     color: #e5e7eb;
 }
 .nicegui-content {
-    max-width: 1400px;
+    max-width: 1920px;
     margin: 0 auto;
     padding: 24px;
 }
