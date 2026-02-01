@@ -219,9 +219,9 @@ body {
 """
 )
 
-with ui.row().classes("w-full gap-6 items-stretch"):
+with ui.grid(columns=2).classes("w-full gap-6 items-start"):
     # LEFT COLUMN: Graphs
-    with ui.column().classes("w-full md:w-1/2 gap-6"):
+    with ui.column().classes("w-full gap-6"):
         with ui.card().classes("panel w-full"):
             ui.label("Gyroscope Data").classes("panel-title")
             gyro_chart = (
@@ -234,14 +234,12 @@ with ui.row().classes("w-full gap-6 items-stretch"):
             )
 
     # RIGHT COLUMN: 3D Model & Video Placeholder
-    with ui.column().classes("w-full md:w-1/2 gap-6"):
+    with ui.column().classes("w-full gap-6"):
         with ui.card().classes("panel w-full"):
             ui.label("3D STL Model").classes("panel-title")
-            with ui.scene(width=100, height=260).classes(
-                "bg-transparent"
-            ) as scene:
+            with ui.scene(height=260).classes("w-full bg-transparent") as scene:
                 # Load the duck. Adjust key/scale as needed
-                scene.stl("/stls/__Duck.stl").scale(0.1).material("#d1d5db")
+                scene.stl("/stls/AnthonyHua.stl").material("#d1d5db")
                 scene.move_camera(0, -10, 5)
 
         with ui.card().classes("panel w-full"):
