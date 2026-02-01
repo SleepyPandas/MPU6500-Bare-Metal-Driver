@@ -9,7 +9,8 @@ from collections import deque
 
 
 import serial
-from nicegui import ui
+import pathlib
+from nicegui import app, ui
 
 SERIAL_PORT = "COM3"
 BAUD_RATE = 115200
@@ -24,6 +25,10 @@ ROTATION_SCALE = math.radians(20)
 COLOR_X = "#00f5ff"
 COLOR_Y = "#ff4dd2"
 COLOR_Z = "#ffd166"
+
+# Serve static files for 3D models only (assuming 'STLS' folder exists in current dir)
+base_path = pathlib.Path(__file__).parent
+app.add_static_files("/stls", base_path / "STLS")
 
 # Regex to parse DATA from UART lines
 
@@ -215,6 +220,7 @@ body {
 )
 
 with ui.row().classes("w-full gap-6 items-stretch"):
+    # LEFT COLUMN: Graphs
     with ui.column().classes("w-full md:w-1/2 gap-6"):
         with ui.card().classes("panel w-full"):
             ui.label("Gyroscope Data").classes("panel-title")
@@ -226,6 +232,24 @@ with ui.row().classes("w-full gap-6 items-stretch"):
             accel_chart = (
                 ui.echart(chart_options()).classes("w-full").style("height: 260px;")
             )
+
+    # RIGHT COLUMN: 3D Model & Video Placeholder
+    with ui.column().classes("w-full md:w-1/2 gap-6"):
+        with ui.card().classes("panel w-full"):
+            ui.label("3D STL Model").classes("panel-title")
+            with ui.scene(width=100, height=260).classes(
+                "bg-transparent"
+            ) as scene:
+                # Load the duck. Adjust key/scale as needed
+                scene.stl("/stls/__Duck.stl").scale(0.1).material("#d1d5db")
+                scene.move_camera(0, -10, 5)
+
+        with ui.card().classes("panel w-full"):
+            ui.label("Video Feed (Placeholder)").classes("panel-title")
+            with ui.element("div").classes(
+                "placeholder w-full h-64 flex items-center justify-center"
+            ):
+                ui.label("Video Feed Area")
 
 
 def update_chart(chart, series_data: list[list[float]]) -> None:
