@@ -38,6 +38,7 @@ THEME = {
     "text": "#e2e8f0",
     "muted": "#94a3b8",
     "accent": "#5ecbff",
+    "stl": "#ffffff",
     "x": "#ff6b6b",
     "y": "#5ad4e6",
     "z": "#ffd166",
@@ -149,7 +150,7 @@ def setup_stl_axis(ax):
 
     stl_collection = Poly3DCollection(
         stl_base_vectors,
-        facecolors=THEME["accent"],
+        facecolors=THEME["stl"],
         edgecolors=None,
         linewidths=0,  
         shade=True,  
