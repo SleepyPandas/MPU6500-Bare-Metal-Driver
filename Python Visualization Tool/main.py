@@ -1,20 +1,19 @@
 from __future__ import annotations
 
 import math
+import pathlib
 import random
 import re
 import threading
 import time
 from collections import deque
 
-
 import serial
-import pathlib
 from nicegui import app, ui
 
 SERIAL_PORT = "COM3"
 BAUD_RATE = 115200
-MOCK_DATA = True
+MOCK_DATA = False
 
 PLOT_HISTORY = 100
 SMOOTHING_WINDOW = 12
@@ -31,7 +30,6 @@ base_path = pathlib.Path(__file__).parent
 app.add_static_files("/stls", base_path / "STLS")
 
 # Regex to parse DATA from UART lines
-
 FLOAT_PATTERN = r"[-+]?\d*\.?\d+(?:[eE][-+]?\d+)?"
 LINE_RE = re.compile(
     rf"Gyro:\s*X\s*\|\s*(?P<gx>{FLOAT_PATTERN})\s*\|\s*,\s*"
@@ -54,6 +52,12 @@ accel_data = {
     "y": deque(maxlen=PLOT_HISTORY),
     "z": deque(maxlen=PLOT_HISTORY),
 }
+
+serial_lock = threading.Lock()
+stop_event = threading.Event()
+ser = None
+serial_thread = None
+serial_started = False
 
 
 def parse_line(line: str) -> dict[str, float] | None:
@@ -103,7 +107,11 @@ def mock_line() -> str:
     )
 
 
-def aim_spot_light(light, position: tuple[float, float, float], target: tuple[float, float, float] = (0.0, 0.0, 0.0)) -> None:
+def aim_spot_light(
+    light,
+    position: tuple[float, float, float],
+    target: tuple[float, float, float] = (0.0, 0.0, 0.0),
+) -> None:
     dx = target[0] - position[0]
     dy = target[1] - position[1]
     dz = target[2] - position[2]
@@ -116,21 +124,57 @@ def aim_spot_light(light, position: tuple[float, float, float], target: tuple[fl
 
 def serial_worker() -> None:
     if MOCK_DATA:
-        while True:
+        while not stop_event.is_set():
             ingest_line(mock_line())
             time.sleep(MOCK_INTERVAL)
-    else:
-        try:
-            with serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1) as ser:
-                while True:
-                    raw = ser.readline()
-                    if not raw:
-                        continue
-                    line = raw.decode(errors="ignore").strip()
-                    if line:
-                        ingest_line(line)
-        except Exception as exc:
-            print(f"Serial reader stopped: {exc}")
+        return
+
+    if not ser or not ser.is_open:
+        print("Serial reader: Port not open, thread exiting.")
+        return
+
+    try:
+        while ser and ser.is_open and not stop_event.is_set():
+            raw = ser.readline()
+            if not raw:
+                continue
+            line = raw.decode(errors="ignore").strip()
+            if line:
+                ingest_line(line)
+    except Exception as exc:
+        print(f"Serial reader stopped: {exc}")
+
+
+def start_serial() -> None:
+    global ser, serial_thread, serial_started
+    with serial_lock:
+        if serial_started:
+            return
+        serial_started = True
+        stop_event.clear()
+
+        if not MOCK_DATA:
+            try:
+                ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=1)
+                print(f"Connected to {SERIAL_PORT}")
+            except Exception as exc:
+                print(f"Could not open port: {exc}")
+                ser = None
+                serial_started = False
+                return
+
+        serial_thread = threading.Thread(target=serial_worker, daemon=True)
+        serial_thread.start()
+
+
+def stop_serial() -> None:
+    global ser, serial_started
+    stop_event.set()
+    with serial_lock:
+        if ser and ser.is_open:
+            ser.close()
+        ser = None
+        serial_started = False
 
 
 def chart_options() -> dict:
@@ -194,9 +238,18 @@ def chart_options() -> dict:
     }
 
 
-ui.dark_mode()
-ui.add_head_html(
-    """
+def update_chart(chart, series_data: list[list[float]]) -> None:
+    length = len(series_data[0]) if series_data else 0
+    chart.options["xAxis"]["data"] = list(range(length))
+    for idx, data in enumerate(series_data):
+        chart.options["series"][idx]["data"] = data
+    chart.update()
+
+
+def build_ui() -> None:
+    ui.dark_mode()
+    ui.add_head_html(
+        """
 <style>
 body {
     background: #1a1a1a;
@@ -228,69 +281,69 @@ body {
 }
 </style>
 """
-)
+    )
 
-with ui.grid(columns=2).classes("w-full gap-6 items-start"):
-    # LEFT COLUMN: Graphs
-    with ui.column().classes("w-full gap-6"):
-        with ui.card().classes("panel w-full"):
-            ui.label("Gyroscope Data").classes("panel-title")
-            gyro_chart = (
-                ui.echart(chart_options()).classes("w-full").style("height: 400px;")
-            )
-        with ui.card().classes("panel w-full"):
-            ui.label("Accelerometer Data").classes("panel-title")
-            accel_chart = (
-                ui.echart(chart_options()).classes("w-full").style("height: 400px;")
-            )
+    with ui.grid(columns=2).classes("w-full gap-6 items-start"):
+        # LEFT COLUMN: Graphs
+        with ui.column().classes("w-full gap-6"):
+            with ui.card().classes("panel w-full"):
+                ui.label("Gyroscope Data").classes("panel-title")
+                gyro_chart = (
+                    ui.echart(chart_options()).classes("w-full").style("height: 400px;")
+                )
+            with ui.card().classes("panel w-full"):
+                ui.label("Accelerometer Data").classes("panel-title")
+                accel_chart = (
+                    ui.echart(chart_options()).classes("w-full").style("height: 400px;")
+                )
 
-    # RIGHT COLUMN: 3D Model & Video Placeholder
-    with ui.column().classes("w-full gap-6"):
-        with ui.card().classes("panel w-full"):
-            ui.label("3D STL Model").classes("panel-title")
-            with ui.scene(height=400, grid=False, background_color="#0a0a0a").classes(
-                "w-full"
-            ) as scene:
+        # RIGHT COLUMN: 3D Model & Video Placeholder
+        with ui.column().classes("w-full gap-6"):
+            with ui.card().classes("panel w-full"):
+                ui.label("3D STL Model").classes("panel-title")
+                with ui.scene(height=400, grid=False, background_color="#0a0a0a").classes(
+                    "w-full"
+                ) as scene:
+                    # Load the model. Adjust key/scale as needed
+                    scene.stl("/stls/AnthonyHua.stl").material("#ff9100").scale(0.05)
+                    scene.cylinder(0.2, 0.2, 2).move(x=0.6).rotate(0, 0, 1.5).material(
+                        "#ff4444"
+                    ).scale(
+                        0.55
+                    )  # X-axis marker
+                    scene.cylinder(0.2, 0.2, 2).move(y=0.6).material("#44ff44").scale(
+                        0.55
+                    )  # Y-axis marker
+                    scene.cylinder(0.2, 0.2, 2).move(z=0.6).rotate(1.5, 0, 0).material(
+                        "#4444ff"
+                    ).scale(
+                        0.55
+                    )  # Z-axis marker
+                    scene.move_camera(0, -10, 5)
 
-                # Load the model. Adjust key/scale as needed
+            # Video Placeholder
+            with ui.card().classes("panel w-full"):
+                ui.label("Video Feed (Placeholder)").classes("panel-title")
+                with ui.element("div").classes(
+                    "placeholder w-full h-64 flex items-center justify-center"
+                ):
+                    ui.label("Video Feed Area")
 
-                scene.stl("/stls/AnthonyHua.stl").material("#ff9100").scale(0.05)
-                scene.cylinder(0.2, 0.2, 2).move(x=0.6).rotate(0, 0, 1.5).material("#ff4444").scale(0.55)  # X-axis marker
-                scene.cylinder(0.2, 0.2, 2).move(y=0.6).material("#44ff44").scale(0.55)  # Y-axis marker
-                scene.cylinder(0.2, 0.2, 2).move(z=0.6).rotate(1.5, 0, 0).material("#4444ff").scale(0.55)  # Z-axis marker
-                scene.move_camera(0, -10, 5)
+    def update_ui() -> None:
+        with data_lock:
+            gx = list(gyro_data["x"])
+            gy = list(gyro_data["y"])
+            gz = list(gyro_data["z"])
+            ax = list(accel_data["x"])
+            ay = list(accel_data["y"])
+            az = list(accel_data["z"])
 
-        # Video Placeholder
-        with ui.card().classes("panel w-full"):
-            ui.label("Video Feed (Placeholder)").classes("panel-title")
-            with ui.element("div").classes(
-                "placeholder w-full h-64 flex items-center justify-center"
-            ):
-                ui.label("Video Feed Area")
+        update_chart(gyro_chart, [gx, gy, gz])
+        update_chart(accel_chart, [ax, ay, az])
 
-
-def update_chart(chart, series_data: list[list[float]]) -> None:
-    length = len(series_data[0]) if series_data else 0
-    chart.options["xAxis"]["data"] = list(range(length))
-    for idx, data in enumerate(series_data):
-        chart.options["series"][idx]["data"] = data
-    chart.update()
+    ui.timer(UPDATE_INTERVAL, update_ui)
 
 
-def update_ui() -> None:
-    with data_lock:
-        gx = list(gyro_data["x"])
-        gy = list(gyro_data["y"])
-        gz = list(gyro_data["z"])
-        ax = list(accel_data["x"])
-        ay = list(accel_data["y"])
-        az = list(accel_data["z"])
-
-    update_chart(gyro_chart, [gx, gy, gz])
-    update_chart(accel_chart, [ax, ay, az])
-
-
-threading.Thread(target=serial_worker, daemon=True).start()
-ui.timer(UPDATE_INTERVAL, update_ui)
-
-ui.run(title="MPU6500 Sensor Dashboard")
+app.on_startup(start_serial)
+app.on_shutdown(stop_serial)
+ui.run(build_ui, title="MPU6500 Sensor Dashboard", reload=False)
