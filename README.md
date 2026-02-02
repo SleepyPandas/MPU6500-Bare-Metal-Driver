@@ -1,8 +1,9 @@
 # MPU6500 Bare Metal Driver
 ![Language](https://img.shields.io/badge/Language-C-white)
 ![Architecture](https://img.shields.io/badge/Architecture-Bare_Metal-blue)
-![Platform](https://img.shields.io/badge/Platform-STM32_HAL-42f5da)
+![Platform](https://img.shields.io/badge/Platform-STM32_ArmCortex_M33-42f5da)
 ![Sensor](https://img.shields.io/badge/Sensor-MPU6500-a442f5)
+![BuildTool](https://img.shields.io/badge/BuildTool-Cmake-e81526)
 
 [View Driver Components Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Components/MPU6500) | [View Python Visualization Tool Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Python%20Visualization%20Tool)
 
