@@ -3,6 +3,8 @@
 ![STM32](https://img.shields.io/badge/Platform-STM32_HAL-green)
 ![Sensor](https://img.shields.io/badge/Sensor-MPU6500-orange)
 
+[View Driver Components Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Components/MPU6500) | [View Python Visualization Tool Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Python%20Visualization%20Tool)
+
 ## Project Overview
 This project delivers a robust, bare-metal driver for the MPU6500 6-axis accelerometer and gyroscope. Designed for the STM32H5 microcontroller series, it provides a high-level API for sensor configuration and data acquisition while maintaining low-level control. The system includes a Python Matplotlib dashboard for real-time data logging and visualization, demonstrating a complete end-to-end embedded solution.
 
