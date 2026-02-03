@@ -14,6 +14,16 @@ This code does not use an existing library for the MPU6500 instead this driver m
 
 https://github.com/user-attachments/assets/35c72ef3-7cd2-4b26-8794-a8332a81c6cc
 
+## Driver Source (Authored)
+
+* [Components/MPU6500/mpu6500.c](Components/MPU6500/mpu6500.c)
+* [Components/MPU6500/mpu6500.h](Components/MPU6500/mpu6500.h)
+
+## Python Dashboard Source
+
+* [Python Visualization Tool/MatPlotLib Dashboard.py](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
+* [Python Visualization Tool/requirements.txt](Python%20Visualization%20Tool/requirements.txt)
+
 ## Key Features
  **Bare Metal Implementation**: Direct register manipulation using STM32 HAL for I2C communication. <br>
 **Configurable Full-Scale Ranges**: Dynamic runtime configuration via direct register writing and bit-shifting:
