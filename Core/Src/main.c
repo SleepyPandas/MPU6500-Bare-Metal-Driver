@@ -134,7 +134,7 @@ int main(void) {
 
     HAL_UART_Transmit(&huart3, (uint8_t*)buffer, strlen(buffer), HAL_MAX_DELAY);
 
-    HAL_Delay(100);
+    HAL_Delay(10);
 
     /* USER CODE END WHILE */
 
