@@ -202,7 +202,7 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
   default:
     config = MPU6500_Gyro_250;
   }
-  MPUConfig.Accel_Setting = config;
+  MPUConfig.Gyro_Setting = config;
   return mpu_status;
 }
 
