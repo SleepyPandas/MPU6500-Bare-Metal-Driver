@@ -62,7 +62,7 @@ plt.rcParams.update(
 
 def style_axis(ax, title):
     ax.set_facecolor(THEME["ax_bg"])
-    ax.set_title(title, color=THEME["accent"], pad=10, fontsize=12, fontweight="bold")
+    ax.set_title(title, color=THEME["accent"], pad=15, fontsize=14, fontweight="bold")
     ax.tick_params(colors=THEME["muted"])
     for spine in ax.spines.values():
         spine.set_color(THEME["grid"])
@@ -71,7 +71,7 @@ def style_axis(ax, title):
 
 
 def style_legend(ax):
-    legend = ax.legend(loc="upper right", fontsize="x-small", frameon=True)
+    legend = ax.legend(loc="upper right", fontsize=14, frameon=True)
     legend.get_frame().set_facecolor(THEME["ax_bg"])
     legend.get_frame().set_edgecolor(THEME["grid"])
     for text in legend.get_texts():
@@ -83,8 +83,8 @@ def style_axis_3d(ax):
     ax.set_title(
         "STL Orientation (Gyro)",
         color=THEME["accent"],
-        pad=10,
-        fontsize=12,
+        pad=15,
+        fontsize=14,
         fontweight="bold",
     )
     ax.tick_params(colors=THEME["muted"])
@@ -123,7 +123,7 @@ def setup_stl_axis(ax):
             "Install numpy-stl to load STL",
             transform=ax.transAxes,
             color=THEME["muted"],
-            fontsize=10,
+            fontsize=12,
         )
         return
 
@@ -134,7 +134,7 @@ def setup_stl_axis(ax):
             f"STL not found: {STL_PATH}",
             transform=ax.transAxes,
             color=THEME["muted"],
-            fontsize=10,
+            fontsize=12,
         )
         return
 
