@@ -5,8 +5,6 @@
 ![Sensor](https://img.shields.io/badge/Sensor-MPU6500-a442f5)
 ![BuildTool](https://img.shields.io/badge/BuildTool-Cmake-e81526)
 
-[View Driver Components Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Components/MPU6500) | [View Python Visualization Tool Code](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/tree/main/Python%20Visualization%20Tool)
-
 ## Project Overview
 This project implements a modular bare-metal driver for the MPU6500 6-axis accelerometer and gyroscope on the STM32H503RB Nucleo-64 development board. The driver is split into a dedicated component (`Components/MPU6500`) and is called from `main.c` to read the sensor and stream data over UART to a Python Matplotlib dashboard for visualization.
 
@@ -14,7 +12,7 @@ This code does not use an existing library for the MPU6500 instead this driver m
 
 https://github.com/user-attachments/assets/35c72ef3-7cd2-4b26-8794-a8332a81c6cc
 
-## Driver Source (Authored)
+## Driver Source
 
 * [`Components/MPU6500/mpu6500.c`](Components/MPU6500/mpu6500.c)
 * [`Components/MPU6500/mpu6500.h`](Components/MPU6500/mpu6500.h)
