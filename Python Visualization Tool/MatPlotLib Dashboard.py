@@ -20,7 +20,7 @@ except Exception:
 # --- CONFIGURATION ---
 SERIAL_PORT = "COM3"
 BAUD_RATE = 115200
-MAX_POINTS = 100
+MAX_POINTS = 300
 UPDATE_INTERVAL_MS = 75
 
 STL_PATH = Path(__file__).parent / "STLS" / "AnthonyHua.stl"
