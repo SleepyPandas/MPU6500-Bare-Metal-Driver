@@ -10,7 +10,8 @@ This project implements a modular bare-metal driver for the MPU6500 6-axis accel
 
 This code does not use an existing library for the MPU6500 instead this driver manually handles register interaction to ensure maximum control and efficiency. It demonstrates precise configuration using safe read-modify-write patterns, automated startup calibration, and raw data sensitivity scaling without relying on heavy external dependencies.
 
-https://github.com/user-attachments/assets/35c72ef3-7cd2-4b26-8794-a8332a81c6cc
+https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
+
 
 ## Driver Source
 
