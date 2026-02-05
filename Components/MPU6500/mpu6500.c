@@ -63,7 +63,6 @@ static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   HAL_StatusTypeDef mpu_status;
   const uint16_t dev_address = MPU6500_I2C_ADDR;
-  const uint32_t timeout = 1000U;
   const uint8_t sleep_wake_mask = 0xBFU;
 
   uint8_t who_am_i_value = 0U;
@@ -72,9 +71,8 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   uint8_t verify = 0U;
 
   // Check device ID
-  mpu_status =
-      HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_WHO_AM_I,
-                       I2C_MEMADD_SIZE_8BIT, &who_am_i_value, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Read_DMA(hi2c, dev_address, MPU6500_REG_WHO_AM_I,
+                                    I2C_MEMADD_SIZE_8BIT, &who_am_i_value, 1);
 
   if (who_am_i != NULL) {
     *who_am_i = who_am_i_value;
@@ -83,24 +81,23 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   }
 
   // Wake device (clear sleep bit)
-  mpu_status =
-      HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                       I2C_MEMADD_SIZE_8BIT, &pwr_mgmt_1_value, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Read_DMA(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
+                                    I2C_MEMADD_SIZE_8BIT, &pwr_mgmt_1_value, 1);
 
   if (mpu_status != HAL_OK)
     return HAL_ERROR;
 
   wake = (uint8_t)(pwr_mgmt_1_value & sleep_wake_mask);
 
-  mpu_status = HAL_I2C_Mem_Write(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                                 I2C_MEMADD_SIZE_8BIT, &wake, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Write_DMA(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
+                                     I2C_MEMADD_SIZE_8BIT, &wake, 1);
 
   if (mpu_status != HAL_OK)
     return HAL_ERROR;
 
   // Verify wake status
-  mpu_status = HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                                I2C_MEMADD_SIZE_8BIT, &verify, 1, timeout);
+  mpu_status = HAL_I2C_Mem_Read_DMA(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
+                                    I2C_MEMADD_SIZE_8BIT, &verify, 1);
 
   return mpu_status;
 }
@@ -113,8 +110,8 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
 
   // Read current state
   mpu_status =
-      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
-                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+      HAL_I2C_Mem_Read_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                           I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1);
 
   // Clear bits
   uint8_t AND_ACCEL_Data = (Current_Register_Data & inverted_range_mask);
@@ -127,8 +124,8 @@ HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
   uint8_t Final_ACCEL_Data = (AND_ACCEL_Data | range);
 
   mpu_status =
-      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
-                        I2C_MEMADD_SIZE_8BIT, &Final_ACCEL_Data, 1, 300);
+      HAL_I2C_Mem_Write_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                            I2C_MEMADD_SIZE_8BIT, &Final_ACCEL_Data, 1);
 
   if (mpu_status != HAL_OK) {
     return -1;
@@ -164,8 +161,8 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
 
   // Read current state
   mpu_status =
-      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+      HAL_I2C_Mem_Read_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                           I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1);
 
   // Clear bits
   uint8_t AND_GYRO_Data = (Current_Register_Data & inverted_range_mask);
@@ -178,8 +175,8 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
   uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
 
   mpu_status =
-      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                        I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1, 300);
+      HAL_I2C_Mem_Write_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                            I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1);
   if (mpu_status != HAL_OK) {
     return -1;
   }
@@ -212,8 +209,9 @@ HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
   HAL_StatusTypeDef status;
   float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
 
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
-                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status =
+      HAL_I2C_Mem_Read_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
+                           I2C_MEMADD_SIZE_8BIT, raw_data, 6);
 
   if (status != HAL_OK)
     return status;
@@ -240,8 +238,9 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
   float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
 
   // Read high and low bytes for X, Y, Z (6 bytes total)
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
-                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status =
+      HAL_I2C_Mem_Read_DMA(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
+                           I2C_MEMADD_SIZE_8BIT, raw_data, 6);
 
   if (status != HAL_OK)
     return status;
@@ -296,4 +295,3 @@ HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
 
   return status;
 }
-
