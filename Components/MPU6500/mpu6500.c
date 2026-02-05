@@ -63,7 +63,6 @@ static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
 HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   HAL_StatusTypeDef mpu_status;
   const uint16_t dev_address = MPU6500_I2C_ADDR;
-  const uint8_t sleep_wake_mask = 0xBFU;
 
   uint8_t who_am_i_value = 0U;
   uint8_t pwr_mgmt_1_value = 0U;
@@ -87,7 +86,7 @@ HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
   if (mpu_status != HAL_OK)
     return HAL_ERROR;
 
-  wake = (uint8_t)(pwr_mgmt_1_value & sleep_wake_mask);
+  wake = (uint8_t)(pwr_mgmt_1_value & Sleep_Wake_Mask);
 
   mpu_status = HAL_I2C_Mem_Write_DMA(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
                                      I2C_MEMADD_SIZE_8BIT, &wake, 1);

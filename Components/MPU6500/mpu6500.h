@@ -21,7 +21,7 @@ extern "C" {
 
 /** @brief MPU6500 I2C Address (Left Shifted) for Address Spacing + W/R bit */
 #define MPU6500_I2C_ADDR (0x68U << 1)
-
+#define Sleep_Wake_Mask 0xBFU
 #define MPU6500_REG_WHO_AM_I 0x75U
 #define MPU6500_REG_PWR_MGMT_1 0x6BU
 #define MPU6500_REG_ACCEL_CONFIG 0x1CU
