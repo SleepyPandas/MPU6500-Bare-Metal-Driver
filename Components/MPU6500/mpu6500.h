@@ -79,6 +79,12 @@ typedef enum {
 
 // Driver Configuration State
 typedef struct {
+  int8_t (*write_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
+  int8_t (*read_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
+  int8_t (*delay)(uint32_t milliseconds);
+
+
+
   Accel_Calculation Accel_Setting;
   Gyro_Calculation Gyro_Setting;
   int8_t Gyro_Offset_Calibration[3];
@@ -157,6 +163,10 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
  */
 HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
                                            int8_t return_offset[3]);
+
+
+
+
 
 #ifdef __cplusplusso 
 }
