@@ -81,7 +81,7 @@ typedef enum {
 typedef struct {
   int8_t (*write_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
   int8_t (*read_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
-  int8_t (*delay)(uint32_t milliseconds);
+  void (*delay)(uint32_t milliseconds);
 
 
 
