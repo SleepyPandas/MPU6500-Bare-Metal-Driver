@@ -6,6 +6,7 @@ import numpy as np
 import serial
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
+from matplotlib.widgets import TextBox
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from collections import deque
 
@@ -199,6 +200,11 @@ last_update_time = time.perf_counter()
 stl_base_vectors = None
 stl_collection = None
 
+# --- X-AXIS SCALING DEBOUNCE STATE ---
+pending_max_points = None       # The new value waiting to be applied
+pending_max_points_time = None  # When the last input change happened
+XAXIS_DEBOUNCE_SEC = 2.0       # Wait 1 second before applying
+
 # --- SERIAL CONNECTION ---
 try:
     ser = serial.Serial(SERIAL_PORT, BAUD_RATE, timeout=0.1)
@@ -242,12 +248,63 @@ def parse_line(line):
         return None
 
 
+# --- X-AXIS SCALING INPUT CALLBACK ---
+def on_xaxis_input(text):
+    """Called on every keystroke in the X-axis textbox. Records value + time."""
+    global pending_max_points, pending_max_points_time
+    try:
+        val = int(text.strip())
+        if val > 0:
+            pending_max_points = val
+            pending_max_points_time = time.perf_counter()
+    except ValueError:
+        pass  # Ignore non-integer input while the user is still typing
+
+
+def apply_pending_max_points():
+    """Apply the pending MAX_POINTS value after the debounce period."""
+    global MAX_POINTS, pending_max_points, pending_max_points_time
+    global gyro_x, gyro_y, gyro_z, accel_x, accel_y, accel_z, x_axis
+
+    if pending_max_points is None:
+        return
+    if time.perf_counter() - pending_max_points_time < XAXIS_DEBOUNCE_SEC:
+        return
+
+    new_max = pending_max_points
+    pending_max_points = None
+    pending_max_points_time = None
+
+    if new_max == MAX_POINTS:
+        return
+
+    MAX_POINTS = new_max
+
+    # Rebuild deques, preserving existing data
+    def resize_deque(old, fill=0):
+        new_dq = deque(old, maxlen=new_max)
+        while len(new_dq) < new_max:
+            new_dq.appendleft(fill)
+        return new_dq
+
+    gyro_x = resize_deque(gyro_x, 0)
+    gyro_y = resize_deque(gyro_y, 0)
+    gyro_z = resize_deque(gyro_z, 0)
+    accel_x = resize_deque(accel_x, 0)
+    accel_y = resize_deque(accel_y, 0)
+    accel_z = resize_deque(accel_z, 0)
+    x_axis = deque(range(new_max), maxlen=new_max)
+
+
 # --- UPDATE FUNCTION ---
 def update_graph(frame):
     global last_update_time
     now = time.perf_counter()
     dt = max(now - last_update_time, 1e-3)
     last_update_time = now
+
+    # Check if a debounced X-axis scaling change is ready
+    apply_pending_max_points()
 
     while ser.in_waiting > 0:
         try:
@@ -316,6 +373,22 @@ ax1 = fig.add_subplot(grid[0, 0])
 ax2 = fig.add_subplot(grid[1, 0], sharex=ax1)
 ax3 = fig.add_subplot(grid[:, 1], projection="3d")
 setup_stl_axis(ax3)
+
+# --- X-AXIS SCALE TEXTBOX ---
+# Place a small textbox at the bottom-left of the figure
+tb_ax = fig.add_axes([0.06, 0.01, 0.08, 0.035])
+tb_ax.set_facecolor(THEME["ax_bg"])
+xaxis_textbox = TextBox(
+    tb_ax,
+    "X Window  ",
+    initial=str(MAX_POINTS),
+    color=THEME["ax_bg"],
+    hovercolor="#1e293b",
+)
+xaxis_textbox.label.set_color(THEME["muted"])
+xaxis_textbox.label.set_fontsize(10)
+xaxis_textbox.text_disp.set_color(THEME["text"])
+xaxis_textbox.on_text_change(on_xaxis_input)
 
 ani = animation.FuncAnimation(fig, update_graph, interval=UPDATE_INTERVAL_MS)
 plt.show()
