@@ -261,8 +261,9 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
   for (int i = 0; i < 512; i++) {
     static uint8_t gyro_raw[6];
     status = MPU6500_Read_Gyro_DMA(config, gyro_raw);
+    config->delay_ms(5); 
     MPU6500_Process_Gyro_DMA(gyro_raw, &gyro_data);
-    config->delay_ms(5);
+    
     if (status == 0) {
       accumulator_data[0] += gyro_data.Gyro_X;
       accumulator_data[1] += gyro_data.Gyro_Y;
