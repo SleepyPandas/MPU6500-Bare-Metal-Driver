@@ -86,38 +86,46 @@ static void MX_USART3_UART_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 
-/** @brief These callbacks Reference the NVIC table and are automatically
-called */
+/* I2C DMA Callbacks ---------------------------------------------------------
+ * Called by the HAL from the DMA/I2C interrupt handlers when a memory
+ * read/write transfer completes or errors. These set flags that the
+ * main-loop state machine polls to know when data is ready.
+ */
 
+/** @brief I2C RX complete — signals that DMA read data is in the buffer. */
 void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
-  // check hi2c is the right bus
   if (hi2c->Instance == I2C1) {
     I2C1_RX_FLAG = 1;
   }
 }
 
+/** @brief I2C TX complete — signals that DMA write has finished. */
 void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c) {
   if (hi2c->Instance == I2C1) {
-    // check hi2c is the right bus
     I2C1_TX_FLAG = 1;
   }
 }
 
+/** @brief I2C error — stores error code, sets flags to unblock waiters, aborts. */
 void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
   I2C1_ERROR_FLAG = HAL_I2C_GetError(hi2c);
-  // Set to finish state incase it Hangs
   I2C1_RX_FLAG = 1;
   I2C1_TX_FLAG = 1;
-  // Back up
   HAL_I2C_Master_Abort_IT(hi2c, MPU6500_I2C_ADDR);
 }
 
+/* Platform I2C wrappers (non-blocking DMA) ----------------------------------
+ * These are passed to the MPU6500 driver via MPU6500_Config. They start a DMA
+ * transfer and return immediately. The flag is cleared BEFORE starting DMA to
+ * prevent a race where the ISR fires before the flag is reset.
+ */
+
+/** @brief Non-blocking I2C register write via DMA. */
 int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                        uint16_t len) {
-  I2C1_TX_FLAG = 0; // Clear flag BEFORE starting DMA (race condition)
+  I2C1_TX_FLAG = 0;
   if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                             p_data, len) == HAL_OK) {
-
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
@@ -125,13 +133,12 @@ int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
   }
 }
 
+/** @brief Non-blocking I2C register read via DMA. */
 int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                       uint16_t len) {
-  I2C1_RX_FLAG = 0; // Clear flag BEFORE starting DMA (race condition)
+  I2C1_RX_FLAG = 0;
   if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                            p_data, len) == HAL_OK) {
-    // Wait for DMA transfer to complete so driver can safely use the data
-
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
@@ -177,6 +184,7 @@ int main(void) {
 
   /* USER CODE BEGIN 2 */
 
+  /* Wire the platform DMA layer to the MPU6500 driver */
   MPU6500_Config config = {
       .write = stm32_write_DMA,
       .read = stm32_read_DMA,
@@ -184,16 +192,17 @@ int main(void) {
   };
 
   MPU6500_Init(&config);
+
   MPU6500_Gyro_Data Gyro_Data = {0};
   MPU6500_Accel_Data Accel_Data = {0};
 
+  /* Persistent DMA target buffers — must outlive each transfer */
   static uint8_t gyro_raw[6];
   static uint8_t accel_raw[6];
 
   char buffer[200];
 
   int8_t gyro_config[3] = {0, 0, 0};
-
   MPU6500_Gyro_Calibration(&config, gyro_config);
 
   /* USER CODE END 2 */
@@ -202,12 +211,21 @@ int main(void) {
   /* USER CODE BEGIN WHILE */
   while (1) {
 
+    /*
+     * Non-blocking state machine for continuous sensor reads:
+     *   IDLE       -> start gyro DMA read
+     *   READ_GYRO  -> wait for DMA flag, process gyro, start accel DMA read
+     *   READ_ACCEL -> wait for DMA flag, process accel
+     *   DATA_READY -> transmit results over UART, return to IDLE
+     *
+     * The CPU is free between state transitions for other work.
+     */
     switch (MPU6500_current_state) {
     case IDLE:
       MPU6500_Read_Gyro_DMA(&config, gyro_raw);
       MPU6500_current_state = READ_GYRO;
-      
       break;
+
     case READ_GYRO:
       if (I2C1_RX_FLAG == 1) {
         I2C1_RX_FLAG = 0;
@@ -216,6 +234,7 @@ int main(void) {
         MPU6500_current_state = READ_ACCEL;
       }
       break;
+
     case READ_ACCEL:
       if (I2C1_RX_FLAG == 1) {
         I2C1_RX_FLAG = 0;
@@ -224,6 +243,7 @@ int main(void) {
       } else {
         break;
       }
+
     case DATA_READY:
       sprintf(buffer,
               "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y "
@@ -234,11 +254,12 @@ int main(void) {
       HAL_UART_Transmit(&huart3, (uint8_t *)buffer, strlen(buffer), 100);
       MPU6500_current_state = IDLE;
       break;
+
     default:
       return -1;
     }
 
-    // this is not blocking so we can do xyz Here!
+    /* CPU is free here for other non-blocking work */
 
     /* USER CODE END WHILE */
 
