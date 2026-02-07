@@ -114,9 +114,16 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
 
 int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                        uint16_t len) {
+  I2C1_TX_FLAG = 0; // Clear flag BEFORE starting DMA (race condition)
   if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                             p_data, len) == HAL_OK) {
-    I2C1_TX_FLAG = 0;
+    // Wait for DMA transfer to complete so driver can safely use the data
+    uint32_t start = HAL_GetTick();
+    while (I2C1_TX_FLAG == 0) {
+      if ((HAL_GetTick() - start) > 100) {
+        return -1; // Timeout
+      }
+    }
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
@@ -126,9 +133,16 @@ int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
 
 int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                       uint16_t len) {
+  I2C1_RX_FLAG = 0; // Clear flag BEFORE starting DMA (race condition)
   if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                            p_data, len) == HAL_OK) {
-    I2C1_RX_FLAG = 0;
+    // Wait for DMA transfer to complete so driver can safely use the data
+    uint32_t start = HAL_GetTick();
+    while (I2C1_RX_FLAG == 0) {
+      if ((HAL_GetTick() - start) > 100) {
+        return -1; // Timeout
+      }
+    }
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
