@@ -157,7 +157,7 @@ int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
 int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
                                 int8_t return_offset[3]);
 
-#ifdef __cplusplusso
+#ifdef __cplusplus
 }
 #endif
 
