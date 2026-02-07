@@ -74,9 +74,9 @@ typedef enum {
 
 // Driver Configuration State
 typedef struct {
-  int8_t (*write_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+  int8_t (*write)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                       uint16_t len);
-  int8_t (*read_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+  int8_t (*read)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                      uint16_t len);
   void (*delay_ms)(uint32_t milliseconds);
 

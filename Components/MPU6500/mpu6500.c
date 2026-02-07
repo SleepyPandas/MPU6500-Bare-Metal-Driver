@@ -67,7 +67,7 @@ int8_t MPU6500_Init(MPU6500_Config *config) {
   uint8_t verify = 0U;
 
   // Check device ID
-  mpu_status = config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_WHO_AM_I,
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_WHO_AM_I,
                                 &who_am_i_value, 1);
 
   // WHO AM I CHECK?
@@ -75,7 +75,7 @@ int8_t MPU6500_Init(MPU6500_Config *config) {
     return -1;
 
   // Wake device (clear sleep bit)
-  mpu_status = config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1,
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1,
                                 &pwr_mgmt_1_value, 1);
 
   if (mpu_status != 0)
@@ -84,14 +84,14 @@ int8_t MPU6500_Init(MPU6500_Config *config) {
   wake = (uint8_t)(pwr_mgmt_1_value & Sleep_Wake_Mask);
 
   mpu_status =
-      config->write_DMA(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &wake, 1);
+      config->write(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &wake, 1);
 
   if (mpu_status != 0)
     return -1;
 
   // Verify wake status
   mpu_status =
-      config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &verify, 1);
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &verify, 1);
 
   return mpu_status;
 }
@@ -102,7 +102,7 @@ int8_t MPU6500_SetAccelRange(MPU6500_Config *config, Accel_Range range) {
   uint8_t Current_Register_Data = 0U;
 
   // Read current state
-  mpu_status = config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
                                 &Current_Register_Data, 1);
 
   // Clear bits
@@ -115,7 +115,7 @@ int8_t MPU6500_SetAccelRange(MPU6500_Config *config, Accel_Range range) {
   // Set new range
   uint8_t Final_ACCEL_Data = (AND_ACCEL_Data | range);
 
-  mpu_status = config->write_DMA(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+  mpu_status = config->write(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
                                  &Final_ACCEL_Data, 1);
 
   if (mpu_status != 0) {
@@ -150,7 +150,7 @@ int8_t MPU6500_SetRotationRange(MPU6500_Config *config, Gyro_Range range) {
   uint8_t Current_Register_Data = 0U;
 
   // Read current state
-  mpu_status = config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
                                 &Current_Register_Data, 1);
 
   // Clear bits
@@ -163,7 +163,7 @@ int8_t MPU6500_SetRotationRange(MPU6500_Config *config, Gyro_Range range) {
   // Set new range
   uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
 
-  mpu_status = config->write_DMA(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+  mpu_status = config->write(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
                                  &Final_GYRO_Data, 1);
   if (mpu_status != 0) {
     return -1;
@@ -198,7 +198,7 @@ int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
   float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
 
   status =
-      config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_data, 6);
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_data, 6);
 
   if (status != 0)
     return status;
@@ -225,7 +225,7 @@ int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
   float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
 
   // Read high and low bytes for X, Y, Z (6 bytes total)
-  status = config->read_DMA(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
+  status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
                             raw_data, 6);
 
   if (status != 0)
