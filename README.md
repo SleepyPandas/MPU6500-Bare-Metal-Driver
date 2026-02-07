@@ -6,12 +6,14 @@ A from-scratch, register-level driver for the InvenSense MPU6500 6-axis IMU, run
 
 https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
 
+---
+
 ## System Architecture & Data Pipeline
 
-<img width="2788" height="1216" alt="Slide 16_9 - 1 (2)" src="https://github.com/user-attachments/assets/4178657e-291d-46f2-bc64-77368fbd4292" />
+<img width="2788" height="1216" alt="Slide 16_9 - 1 (4)" src="https://github.com/user-attachments/assets/e3964ba7-5c05-400c-bcd2-70d4835915e1" />
 
 
----
+
 
 
 | Feature | Implementation |
