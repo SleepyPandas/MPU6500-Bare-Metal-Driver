@@ -36,6 +36,7 @@
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
+typedef enum { IDLE, READ_GYRO, READ_ACCEL, DATA_READY } MPU6500_State_t;
 
 /* USER CODE END PTD */
 
@@ -51,18 +52,32 @@
 
 /* Private variables ---------------------------------------------------------*/
 
-I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
 
+I2C_HandleTypeDef hi2c1;
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+DMA_HandleTypeDef handle_GPDMA1_Channel0;
+
+UART_HandleTypeDef huart2;
 UART_HandleTypeDef huart3;
 
 /* USER CODE BEGIN PV */
+static volatile uint8_t I2C1_RX_FLAG;
+static volatile uint8_t I2C1_TX_FLAG;
+
+// uint32_t Matches Hal_I2C_GetError() size
+static volatile uint32_t I2C1_ERROR_FLAG;
+
+volatile MPU6500_State_t MPU6500_current_state = IDLE;
 
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_GPDMA1_Init(void);
 static void MX_I2C1_Init(void);
+static void MX_USART2_UART_Init(void);
 static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
@@ -70,6 +85,66 @@ static void MX_USART3_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+
+/* I2C DMA Callbacks ---------------------------------------------------------
+ * Called by the HAL from the DMA/I2C interrupt handlers when a memory
+ * read/write transfer completes or errors. These set flags that the
+ * main-loop state machine polls to know when data is ready.
+ */
+
+/** @brief I2C RX complete — signals that DMA read data is in the buffer. */
+void HAL_I2C_MemRxCpltCallback(I2C_HandleTypeDef *hi2c) {
+  if (hi2c->Instance == I2C1) {
+    I2C1_RX_FLAG = 1;
+  }
+}
+
+/** @brief I2C TX complete — signals that DMA write has finished. */
+void HAL_I2C_MemTxCpltCallback(I2C_HandleTypeDef *hi2c) {
+  if (hi2c->Instance == I2C1) {
+    I2C1_TX_FLAG = 1;
+  }
+}
+
+/** @brief I2C error — stores error code, sets flags to unblock waiters, aborts. */
+void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
+  I2C1_ERROR_FLAG = HAL_I2C_GetError(hi2c);
+  I2C1_RX_FLAG = 1;
+  I2C1_TX_FLAG = 1;
+  HAL_I2C_Master_Abort_IT(hi2c, MPU6500_I2C_ADDR);
+}
+
+/* Platform I2C wrappers (non-blocking DMA) ----------------------------------
+ * These are passed to the MPU6500 driver via MPU6500_Config. They start a DMA
+ * transfer and return immediately. The flag is cleared BEFORE starting DMA to
+ * prevent a race where the ISR fires before the flag is reset.
+ */
+
+/** @brief Non-blocking I2C register write via DMA. */
+int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                       uint16_t len) {
+  I2C1_TX_FLAG = 0;
+  if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                            p_data, len) == HAL_OK) {
+    return 0;
+  } else {
+    HAL_I2C_ErrorCallback(&hi2c1);
+    return -1;
+  }
+}
+
+/** @brief Non-blocking I2C register read via DMA. */
+int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                      uint16_t len) {
+  I2C1_RX_FLAG = 0;
+  if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                           p_data, len) == HAL_OK) {
+    return 0;
+  } else {
+    HAL_I2C_ErrorCallback(&hi2c1);
+    return -1;
+  }
+}
 
 /* USER CODE END 0 */
 
@@ -80,7 +155,7 @@ static void MX_USART3_UART_Init(void);
 int main(void) {
 
   /* USER CODE BEGIN 1 */
-  uint8_t who_am_i = 0U;
+
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -102,16 +177,33 @@ int main(void) {
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_GPDMA1_Init();
   MX_I2C1_Init();
+  MX_USART2_UART_Init();
   MX_USART3_UART_Init();
+
   /* USER CODE BEGIN 2 */
-  MPU6500_Init(&hi2c1, &who_am_i);
+
+  /* Wire the platform DMA layer to the MPU6500 driver */
+  MPU6500_Config config = {
+      .write = stm32_write_DMA,
+      .read = stm32_read_DMA,
+      .delay_ms = HAL_Delay,
+  };
+
+  MPU6500_Init(&config);
+
   MPU6500_Gyro_Data Gyro_Data = {0};
   MPU6500_Accel_Data Accel_Data = {0};
-  int8_t gyro_config[3] = {3};
+
+  /* Persistent DMA target buffers — must outlive each transfer */
+  static uint8_t gyro_raw[6];
+  static uint8_t accel_raw[6];
+
   char buffer[200];
 
-  MPU6500_Gyro_Calibration(&hi2c1, gyro_config);
+  int8_t gyro_config[3] = {0, 0, 0};
+  MPU6500_Gyro_Calibration(&config, gyro_config);
 
   /* USER CODE END 2 */
 
@@ -119,20 +211,55 @@ int main(void) {
   /* USER CODE BEGIN WHILE */
   while (1) {
 
-    MPU6500_Read_Gyro_Data(&hi2c1, &Gyro_Data);
-    MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
+    /*
+     * Non-blocking state machine for continuous sensor reads:
+     *   IDLE       -> start gyro DMA read
+     *   READ_GYRO  -> wait for DMA flag, process gyro, start accel DMA read
+     *   READ_ACCEL -> wait for DMA flag, process accel
+     *   DATA_READY -> transmit results over UART, return to IDLE
+     *
+     * The CPU is free between state transitions for other work.
+     */
+    switch (MPU6500_current_state) {
+    case IDLE:
+      MPU6500_Read_Gyro_DMA(&config, gyro_raw);
+      MPU6500_current_state = READ_GYRO;
+      break;
 
-    // SOUT
-    sprintf(buffer,
-            "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y "
-            "|%7.4f|, Z |%7.4f| \r\n",
-            Gyro_Data.Gyro_X, Gyro_Data.Gyro_Y, Gyro_Data.Gyro_Z,
-            Accel_Data.Accel_X, Accel_Data.Accel_Y, Accel_Data.Accel_Z);
+    case READ_GYRO:
+      if (I2C1_RX_FLAG == 1) {
+        I2C1_RX_FLAG = 0;
+        MPU6500_Process_Gyro_DMA(gyro_raw, &Gyro_Data);
+        MPU6500_Read_Accel_DMA(&config, accel_raw);
+        MPU6500_current_state = READ_ACCEL;
+      }
+      break;
 
-    HAL_UART_Transmit(&huart3, (uint8_t *)buffer, strlen(buffer),
-                      HAL_MAX_DELAY);
+    case READ_ACCEL:
+      if (I2C1_RX_FLAG == 1) {
+        I2C1_RX_FLAG = 0;
+        MPU6500_Process_Accel_DMA(accel_raw, &Accel_Data);
+        MPU6500_current_state = DATA_READY;
+      } else {
+        break;
+      }
 
-    HAL_Delay(10);
+    case DATA_READY:
+      sprintf(buffer,
+              "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y "
+              "|%7.4f|, Z |%7.4f| \r\n",
+              Gyro_Data.Gyro_X, Gyro_Data.Gyro_Y, Gyro_Data.Gyro_Z,
+              Accel_Data.Accel_X, Accel_Data.Accel_Y, Accel_Data.Accel_Z);
+
+      HAL_UART_Transmit(&huart3, (uint8_t *)buffer, strlen(buffer), 100);
+      MPU6500_current_state = IDLE;
+      break;
+
+    default:
+      return -1;
+    }
+
+    /* CPU is free here for other non-blocking work */
 
     /* USER CODE END WHILE */
 
@@ -196,6 +323,34 @@ void SystemClock_Config(void) {
 }
 
 /**
+ * @brief GPDMA1 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_GPDMA1_Init(void) {
+
+  /* USER CODE BEGIN GPDMA1_Init 0 */
+
+  /* USER CODE END GPDMA1_Init 0 */
+
+  /* Peripheral clock enable */
+  __HAL_RCC_GPDMA1_CLK_ENABLE();
+
+  /* GPDMA1 interrupt Init */
+  HAL_NVIC_SetPriority(GPDMA1_Channel0_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel0_IRQn);
+  HAL_NVIC_SetPriority(GPDMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(GPDMA1_Channel1_IRQn);
+
+  /* USER CODE BEGIN GPDMA1_Init 1 */
+
+  /* USER CODE END GPDMA1_Init 1 */
+  /* USER CODE BEGIN GPDMA1_Init 2 */
+
+  /* USER CODE END GPDMA1_Init 2 */
+}
+
+/**
  * @brief I2C1 Initialization Function
  * @param None
  * @retval None
@@ -210,7 +365,7 @@ static void MX_I2C1_Init(void) {
 
   /* USER CODE END I2C1_Init 1 */
   hi2c1.Instance = I2C1;
-  hi2c1.Init.Timing = 0x60808CD3;
+  hi2c1.Init.Timing = 0x10C043E5;
   hi2c1.Init.OwnAddress1 = 0;
   hi2c1.Init.AddressingMode = I2C_ADDRESSINGMODE_7BIT;
   hi2c1.Init.DualAddressMode = I2C_DUALADDRESS_DISABLE;
@@ -236,6 +391,50 @@ static void MX_I2C1_Init(void) {
   /* USER CODE BEGIN I2C1_Init 2 */
 
   /* USER CODE END I2C1_Init 2 */
+}
+
+/**
+ * @brief USART2 Initialization Function
+ * @param None
+ * @retval None
+ */
+static void MX_USART2_UART_Init(void) {
+
+  /* USER CODE BEGIN USART2_Init 0 */
+
+  /* USER CODE END USART2_Init 0 */
+
+  /* USER CODE BEGIN USART2_Init 1 */
+
+  /* USER CODE END USART2_Init 1 */
+  huart2.Instance = USART2;
+  huart2.Init.BaudRate = 115200;
+  huart2.Init.WordLength = UART_WORDLENGTH_8B;
+  huart2.Init.StopBits = UART_STOPBITS_1;
+  huart2.Init.Parity = UART_PARITY_NONE;
+  huart2.Init.Mode = UART_MODE_TX_RX;
+  huart2.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart2.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart2.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart2.Init.ClockPrescaler = UART_PRESCALER_DIV1;
+  huart2.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart2) != HAL_OK) {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetTxFifoThreshold(&huart2, UART_TXFIFO_THRESHOLD_1_8) !=
+      HAL_OK) {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_SetRxFifoThreshold(&huart2, UART_RXFIFO_THRESHOLD_1_8) !=
+      HAL_OK) {
+    Error_Handler();
+  }
+  if (HAL_UARTEx_DisableFifoMode(&huart2) != HAL_OK) {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART2_Init 2 */
+
+  /* USER CODE END USART2_Init 2 */
 }
 
 /**

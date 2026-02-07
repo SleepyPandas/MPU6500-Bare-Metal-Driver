@@ -1,33 +1,32 @@
 /**
  * @file mpu6500.c
- * @brief MPU6500 IMU Driver Source File
+ * @brief MPU6500 IMU driver implementation.
  *
- * This file contains the implementation of the functions declared in
- * mpu6500.h for the MPU6500 6-axis accelerometer and gyroscope driver.
+ * Implements initialization, configuration, calibration, and data acquisition
+ * for the MPU6500 6-axis accelerometer/gyroscope. Supports both blocking and
+ * non-blocking (DMA) I2C through platform-supplied function pointers.
  *
  * @author Anthony Hua ... Rather SleepyPandas
  */
 
 #include "mpu6500.h"
-#include "stm32_hal_legacy.h"
-#include "stm32h5xx_hal.h"
-#include "stm32h5xx_hal_def.h"
-#include "stm32h5xx_hal_i2c.h"
 #include <math.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
-/*Global Variables --------------------------------------------------------*/
+/* Global State --------------------------------------------------------------*/
 
-// Stores current device configuration for data processing
+/** @brief Runtime driver state for sensitivity scaling and calibration. */
 MPU6500_Config MPUConfig = {
     .Accel_Setting = MPU6500_Accel_2G,
     .Gyro_Setting = MPU6500_Gyro_250,
     .Gyro_Offset_Calibration = {0, 0, 0},
 };
 
-/* Sensitivity Lookup Tables -----------------------------------------------*/
+/* Sensitivity Lookup --------------------------------------------------------*/
 
+/** @brief Returns the accelerometer LSB/g value for the given range. */
 static float get_accel_sensitivity(Accel_Calculation sensitivity) {
   switch (sensitivity) {
   case MPU6500_Accel_2G:
@@ -43,6 +42,7 @@ static float get_accel_sensitivity(Accel_Calculation sensitivity) {
   }
 }
 
+/** @brief Returns the gyroscope LSB/(deg/s) value for the given range. */
 static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
   switch (sensitivity) {
   case MPU6500_Gyro_250:
@@ -58,196 +58,177 @@ static float get_gyro_sensitivity(Gyro_Calculation sensitivity) {
   }
 }
 
-/* Driver Implementation ---------------------------------------------------*/
+/* Initialization & Configuration --------------------------------------------*/
 
-HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i) {
-  HAL_StatusTypeDef mpu_status;
-  const uint16_t dev_address = MPU6500_I2C_ADDR;
-  const uint32_t timeout = 1000U;
-  const uint8_t sleep_wake_mask = 0xBFU;
-
+int8_t MPU6500_Init(MPU6500_Config *config) {
+  int8_t mpu_status;
   uint8_t who_am_i_value = 0U;
   uint8_t pwr_mgmt_1_value = 0U;
   uint8_t wake = 0U;
   uint8_t verify = 0U;
 
-  // Check device ID
+  /* Read WHO_AM_I register to confirm device is on the bus */
   mpu_status =
-      HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_WHO_AM_I,
-                       I2C_MEMADD_SIZE_8BIT, &who_am_i_value, 1, timeout);
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_WHO_AM_I, &who_am_i_value, 1);
+  config->delay_ms(25); /* Allow I/O to complete (non-blocking compatibility) */
 
-  if (who_am_i != NULL) {
-    *who_am_i = who_am_i_value;
-  } else {
-    return HAL_ERROR;
-  }
+  if (mpu_status != 0)
+    return -1;
 
-  // Wake device (clear sleep bit)
+  /* Read current power management state */
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1,
+                            &pwr_mgmt_1_value, 1);
+  config->delay_ms(25);
+
+  if (mpu_status != 0)
+    return -1;
+
+  /* Clear the SLEEP bit to wake the device */
+  wake = (uint8_t)(pwr_mgmt_1_value & MPU6500_SLEEP_WAKE_MASK);
+
   mpu_status =
-      HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                       I2C_MEMADD_SIZE_8BIT, &pwr_mgmt_1_value, 1, timeout);
+      config->write(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &wake, 1);
+  config->delay_ms(25);
 
-  if (mpu_status != HAL_OK)
-    return HAL_ERROR;
+  if (mpu_status != 0)
+    return -1;
 
-  wake = (uint8_t)(pwr_mgmt_1_value & sleep_wake_mask);
-
-  mpu_status = HAL_I2C_Mem_Write(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                                 I2C_MEMADD_SIZE_8BIT, &wake, 1, timeout);
-
-  if (mpu_status != HAL_OK)
-    return HAL_ERROR;
-
-  // Verify wake status
-  mpu_status = HAL_I2C_Mem_Read(hi2c, dev_address, MPU6500_REG_PWR_MGMT_1,
-                                I2C_MEMADD_SIZE_8BIT, &verify, 1, timeout);
+  /* Verify the device is awake */
+  mpu_status =
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_PWR_MGMT_1, &verify, 1);
+  config->delay_ms(25);
 
   return mpu_status;
 }
 
-HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
-                                        Accel_Range range) {
-  const uint8_t inverted_range_mask = 0xE7; // ~0x18
-  HAL_StatusTypeDef mpu_status;
-  uint8_t Current_Register_Data = 0U;
+int8_t MPU6500_SetAccelRange(MPU6500_Config *config, Accel_Range range) {
+  const uint8_t range_mask = 0xE7; /* Inverted bits [4:3] */
+  int8_t mpu_status;
+  uint8_t reg_value = 0U;
 
-  // Read current state
-  mpu_status =
-      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
-                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+  /* Read-modify-write: preserve other bits, set new range */
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                            &reg_value, 1);
+  config->delay_ms(10);
 
-  // Clear bits
-  uint8_t AND_ACCEL_Data = (Current_Register_Data & inverted_range_mask);
-
-  if (mpu_status != HAL_OK) {
+  if (mpu_status != 0)
     return -1;
-  }
 
-  // Set new range
-  uint8_t Final_ACCEL_Data = (AND_ACCEL_Data | range);
+  uint8_t new_value = (reg_value & range_mask) | range;
 
-  mpu_status =
-      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
-                        I2C_MEMADD_SIZE_8BIT, &Final_ACCEL_Data, 1, 300);
+  mpu_status = config->write(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_CONFIG,
+                             &new_value, 1);
+  config->delay_ms(10);
 
-  if (mpu_status != HAL_OK) {
+  if (mpu_status != 0)
     return -1;
-  }
 
-  // Update internal config
-  int config = 0;
+  /* Update internal sensitivity index */
   switch (range) {
-  case (MPU6500_ACC_SET_2G):
-    config = MPU6500_Accel_2G;
+  case MPU6500_ACC_SET_2G:
+    MPUConfig.Accel_Setting = MPU6500_Accel_2G;
     break;
-  case (MPU6500_ACC_SET_4G):
-    config = MPU6500_Accel_4G;
+  case MPU6500_ACC_SET_4G:
+    MPUConfig.Accel_Setting = MPU6500_Accel_4G;
     break;
-  case (MPU6500_ACC_SET_8G):
-    config = MPU6500_Accel_8G;
+  case MPU6500_ACC_SET_8G:
+    MPUConfig.Accel_Setting = MPU6500_Accel_8G;
     break;
-  case (MPU6500_ACC_SET_16G):
-    config = MPU6500_Accel_16G;
+  case MPU6500_ACC_SET_16G:
+    MPUConfig.Accel_Setting = MPU6500_Accel_16G;
     break;
   default:
-    config = MPU6500_Accel_2G;
+    MPUConfig.Accel_Setting = MPU6500_Accel_2G;
   }
-  MPUConfig.Accel_Setting = config;
+
   return mpu_status;
 }
 
-HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
-                                           Gyro_Range range) {
-  const uint8_t inverted_range_mask = 0xE7; // ~0x18
-  HAL_StatusTypeDef mpu_status;
-  uint8_t Current_Register_Data = 0U;
+int8_t MPU6500_SetRotationRange(MPU6500_Config *config, Gyro_Range range) {
+  const uint8_t range_mask = 0xE7; /* Inverted bits [4:3] */
+  int8_t mpu_status;
+  uint8_t reg_value = 0U;
 
-  // Read current state
-  mpu_status =
-      HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                       I2C_MEMADD_SIZE_8BIT, &Current_Register_Data, 1, 1000);
+  /* Read-modify-write: preserve other bits, set new range */
+  mpu_status = config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                            &reg_value, 1);
+  config->delay_ms(10);
 
-  // Clear bits
-  uint8_t AND_GYRO_Data = (Current_Register_Data & inverted_range_mask);
-
-  if (mpu_status != HAL_OK) {
+  if (mpu_status != 0)
     return -1;
-  }
 
-  // Set new range
-  uint8_t Final_GYRO_Data = (AND_GYRO_Data | range);
+  uint8_t new_value = (reg_value & range_mask) | range;
 
-  mpu_status =
-      HAL_I2C_Mem_Write(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
-                        I2C_MEMADD_SIZE_8BIT, &Final_GYRO_Data, 1, 300);
-  if (mpu_status != HAL_OK) {
+  mpu_status = config->write(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_CONFIG,
+                             &new_value, 1);
+  config->delay_ms(10);
+
+  if (mpu_status != 0)
     return -1;
-  }
 
-  // Update internal config
-  int config = 0;
+  /* Update internal sensitivity index */
   switch (range) {
-  case (MPU6500_Gyro_SET_250):
-    config = MPU6500_Gyro_250;
+  case MPU6500_Gyro_SET_250:
+    MPUConfig.Gyro_Setting = MPU6500_Gyro_250;
     break;
-  case (MPU6500_Gyro_SET_500):
-    config = MPU6500_Gyro_500;
+  case MPU6500_Gyro_SET_500:
+    MPUConfig.Gyro_Setting = MPU6500_Gyro_500;
     break;
-  case (MPU6500_Gyro_SET_1000):
-    config = MPU6500_Gyro_1000;
+  case MPU6500_Gyro_SET_1000:
+    MPUConfig.Gyro_Setting = MPU6500_Gyro_1000;
     break;
-  case (MPU6500_Gyro_SET_2000):
-    config = MPU6500_Gyro_2000;
+  case MPU6500_Gyro_SET_2000:
+    MPUConfig.Gyro_Setting = MPU6500_Gyro_2000;
     break;
   default:
-    config = MPU6500_Gyro_250;
+    MPUConfig.Gyro_Setting = MPU6500_Gyro_250;
   }
-  MPUConfig.Gyro_Setting = config;
+
   return mpu_status;
 }
 
-HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
-                                         MPU6500_Gyro_Data *Gyro_Data) {
+/* Blocking Read API ---------------------------------------------------------*/
+
+int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
+                              MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
-  HAL_StatusTypeDef status;
+  int8_t status;
   float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
 
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE,
-                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status =
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_data, 6);
 
-  if (status != HAL_OK)
+  if (status != 0)
     return status;
 
-  Gyro_Data->Gyro_X = (raw_data[0] << 8) | raw_data[1];
-  Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
-  Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
+  int16_t combined_data_raw[3] = {0};
+  combined_data_raw[0] = (int16_t)((raw_data[0] << 8) | raw_data[1]);
+  combined_data_raw[1] = (int16_t)((raw_data[2] << 8) | raw_data[3]);
+  combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
 
-  // Apply calibration offset
-  Gyro_Data->Gyro_X = (int16_t)((Gyro_Data->Gyro_X / gyro_norm_const) +
+  Gyro_Data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[0]);
-  Gyro_Data->Gyro_Y = (int16_t)((Gyro_Data->Gyro_Y / gyro_norm_const) +
+  Gyro_Data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[1]);
-  Gyro_Data->Gyro_Z = (int16_t)((Gyro_Data->Gyro_Z / gyro_norm_const) +
+  Gyro_Data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[2]);
 
   return status;
 }
 
-HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
-                                          MPU6500_Accel_Data *Accel_Data) {
+int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
+                               MPU6500_Accel_Data *Accel_Data) {
   uint8_t raw_data[6] = {0};
-  HAL_StatusTypeDef status;
+  int8_t status;
   float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
 
-  // Read high and low bytes for X, Y, Z (6 bytes total)
-  status = HAL_I2C_Mem_Read(hi2c, MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE,
-                            I2C_MEMADD_SIZE_8BIT, raw_data, 6, 100);
+  status =
+      config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, raw_data, 6);
 
-  if (status != HAL_OK)
+  if (status != 0)
     return status;
 
   int16_t combined_data_raw[3] = {0};
-
   combined_data_raw[0] = (int16_t)((raw_data[0] << 8) | raw_data[1]);
   combined_data_raw[1] = (int16_t)((raw_data[2] << 8) | raw_data[3]);
   combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
@@ -259,27 +240,36 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
   return status;
 }
 
-HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
-                                           int8_t return_offset[3]) {
+/* Calibration ---------------------------------------------------------------*/
+
+int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
+                                int8_t return_offset[3]) {
   MPU6500_Gyro_Data gyro_data;
   int32_t accumulator_data[3] = {0};
-  HAL_StatusTypeDef status;
+  int8_t status;
   int8_t offset_data[3];
+  static uint8_t gyro_raw[6];
 
-  // Collect samples to determine average offset (noise reduces with sqrt(N))
-  // Using 512 samples
+  /*
+   * Collect 512 stationary samples using the split-phase DMA API.
+   * The delay between Start and Process ensures data is available
+   * regardless of whether the I/O is blocking or non-blocking.
+   */
   for (int i = 0; i < 512; i++) {
-    status = MPU6500_Read_Gyro_Data(hi2c, &gyro_data);
-    if (status == HAL_OK) {
+    status = MPU6500_Read_Gyro_DMA(config, gyro_raw);
+    config->delay_ms(5);
+    MPU6500_Process_Gyro_DMA(gyro_raw, &gyro_data);
+
+    if (status == 0) {
       accumulator_data[0] += gyro_data.Gyro_X;
       accumulator_data[1] += gyro_data.Gyro_Y;
       accumulator_data[2] += gyro_data.Gyro_Z;
     } else {
       return status;
     }
-    HAL_Delay(1);
   }
 
+  /* Compute negative average as the offset to cancel drift */
   offset_data[0] =
       (int8_t)roundf(-1.0f * ((float)accumulator_data[0] / 512.0f));
   offset_data[1] =
@@ -297,3 +287,43 @@ HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
   return status;
 }
 
+/* Non-blocking (DMA / Split-Phase) API --------------------------------------*/
+
+int8_t MPU6500_Read_Gyro_DMA(MPU6500_Config *config, uint8_t raw_buf[6]) {
+  return config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_buf, 6);
+}
+
+int8_t MPU6500_Read_Accel_DMA(MPU6500_Config *config, uint8_t raw_buf[6]) {
+  return config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, raw_buf, 6);
+}
+
+void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
+                              MPU6500_Gyro_Data *data) {
+  float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
+
+  int16_t combined_data_raw[3];
+  combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);
+  combined_data_raw[1] = (int16_t)((raw_buf[2] << 8) | raw_buf[3]);
+  combined_data_raw[2] = (int16_t)((raw_buf[4] << 8) | raw_buf[5]);
+
+  data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[0]);
+  data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[1]);
+  data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[2]);
+}
+
+void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6],
+                               MPU6500_Accel_Data *data) {
+  float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
+
+  int16_t combined_data_raw[3];
+  combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);
+  combined_data_raw[1] = (int16_t)((raw_buf[2] << 8) | raw_buf[3]);
+  combined_data_raw[2] = (int16_t)((raw_buf[4] << 8) | raw_buf[5]);
+
+  data->Accel_X = (float)(combined_data_raw[0] / accel_norm_const);
+  data->Accel_Y = (float)(combined_data_raw[1] / accel_norm_const);
+  data->Accel_Z = (float)(combined_data_raw[2] / accel_norm_const);
+}
