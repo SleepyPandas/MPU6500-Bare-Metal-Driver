@@ -51,6 +51,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 
+DMA_HandleTypeDef handle_GPDMA1_Channel1;
+
 I2C_HandleTypeDef hi2c1;
 DMA_HandleTypeDef handle_GPDMA1_Channel1;
 DMA_HandleTypeDef handle_GPDMA1_Channel0;
