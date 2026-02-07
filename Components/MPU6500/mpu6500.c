@@ -262,7 +262,7 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
     } else {
       return status;
     }
-    config->delay_ms(1);
+   
   }
 
   offset_data[0] =
