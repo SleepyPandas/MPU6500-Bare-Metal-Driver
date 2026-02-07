@@ -70,7 +70,25 @@ static void MX_USART3_UART_Init(void);
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                       uint16_t len) {
+  if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                            p_data, len) == HAL_OK) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
 
+int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                      uint16_t len) {
+  if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
+                           p_data, len) == HAL_OK) {
+    return 0;
+  } else {
+    return -1;
+  }
+}
 /* USER CODE END 0 */
 
 /**
@@ -105,22 +123,29 @@ int main(void) {
   MX_I2C1_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
-  MPU6500_Init(&hi2c1, &who_am_i);
+
+  MPU6500_Config config = {
+      .write_DMA = stm32_write_DMA,
+      .read_DMA = stm32_read_DMA,
+      .delay_ms = HAL_Delay,
+  };
+
+  MPU6500_Init(&config);
   MPU6500_Gyro_Data Gyro_Data = {0};
   MPU6500_Accel_Data Accel_Data = {0};
   int8_t gyro_config[3] = {3};
   char buffer[200];
 
-  MPU6500_Gyro_Calibration(&hi2c1, gyro_config);
-
+  MPU6500_Gyro_Calibration(&config, gyro_config);
+  
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1) {
 
-    MPU6500_Read_Gyro_Data(&hi2c1, &Gyro_Data);
-    MPU6500_Read_Accel_Data(&hi2c1, &Accel_Data);
+    MPU6500_Read_Gyro_Data(&config, &Gyro_Data);
+    MPU6500_Read_Accel_Data(&config, &Accel_Data);
 
     // SOUT
     sprintf(buffer,
