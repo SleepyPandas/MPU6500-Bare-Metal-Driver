@@ -75,9 +75,9 @@ typedef enum {
 // Driver Configuration State
 typedef struct {
   int8_t (*write)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
-                      uint16_t len);
+                  uint16_t len);
   int8_t (*read)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
-                     uint16_t len);
+                 uint16_t len);
   void (*delay_ms)(uint32_t milliseconds);
 
   Accel_Calculation Accel_Setting;
@@ -156,6 +156,17 @@ int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
  */
 int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
                                 int8_t return_offset[3]);
+
+/** @brief Below are Functions Assuming the user is Using DMA or Non blocking */
+int8_t MPU6500_Read_Gyro_DMA(MPU6500_Config *config, uint8_t raw_buf[6]);
+
+int8_t MPU6500_Read_Accel_DMA(MPU6500_Config *config, uint8_t raw_buf[6]);
+
+void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
+                              MPU6500_Gyro_Data *data);
+
+void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6],
+                               MPU6500_Accel_Data *data);
 
 #ifdef __cplusplus
 }
