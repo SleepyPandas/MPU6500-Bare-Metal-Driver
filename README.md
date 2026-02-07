@@ -15,7 +15,7 @@ https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
 * [`Python Visualization Tool/MatPlotLib Dashboard.py`](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
 
 
-| Skill | Implementation |
+| Feature | Implementation |
 | :--- | :--- |
 | **Platform-Agnostic Driver Design** | Function-pointer abstraction (`MPU6500_Config`) decouples sensor logic from any specific HAL -- portable to any MCU |
 | **Non-Blocking DMA State Machine** | `IDLE -> READ_GYRO -> READ_ACCEL -> DATA_READY` loop frees the CPU between I2C transfers |
