@@ -206,17 +206,18 @@ int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
 
   if (status != 0)
     return status;
+  int16_t combined_data_raw[3] = {0};
 
-  Gyro_Data->Gyro_X = (raw_data[0] << 8) | raw_data[1];
-  Gyro_Data->Gyro_Y = (raw_data[2] << 8) | raw_data[3];
-  Gyro_Data->Gyro_Z = (raw_data[4] << 8) | raw_data[5];
+  combined_data_raw[0] = (int16_t)((raw_data[0] << 8) | raw_data[1]);
+  combined_data_raw[1] = (int16_t)((raw_data[2] << 8) | raw_data[3]);
+  combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
 
   // Apply calibration offset
-  Gyro_Data->Gyro_X = (int16_t)((Gyro_Data->Gyro_X / gyro_norm_const) +
+  Gyro_Data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[0]);
-  Gyro_Data->Gyro_Y = (int16_t)((Gyro_Data->Gyro_Y / gyro_norm_const) +
+  Gyro_Data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[1]);
-  Gyro_Data->Gyro_Z = (int16_t)((Gyro_Data->Gyro_Z / gyro_norm_const) +
+  Gyro_Data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
                                 MPUConfig.Gyro_Offset_Calibration[2]);
 
   return status;
@@ -286,18 +287,42 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
   return status;
 }
 
-int8_t MPU6500_Read_Gyro_DMA (MPU6500_Config *config, uint8_t raw_buf[6]) {
-
+int8_t MPU6500_Read_Gyro_DMA(MPU6500_Config *config, uint8_t raw_buf[6]) {
+  return config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_buf, 6);
 }
 
 int8_t MPU6500_Read_Accel_DMA(MPU6500_Config *config, uint8_t raw_buf[6]) {
-  
+  return config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, raw_buf, 6);
 }
 
-void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6], MPU6500_Gyro_Data *data) {
-  
+void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
+                              MPU6500_Gyro_Data *data) {
+  float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
+  int16_t combined_data_raw[3] = {0};
+
+  combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);
+  combined_data_raw[1] = (int16_t)((raw_buf[2] << 8) | raw_buf[3]);
+  combined_data_raw[2] = (int16_t)((raw_buf[4] << 8) | raw_buf[5]);
+
+  data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[0]);
+  data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[1]);
+  data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
+                           MPUConfig.Gyro_Offset_Calibration[2]);
 }
 
-void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6], MPU6500_Accel_Data *data) {
-  
+void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6],
+                               MPU6500_Accel_Data *data) {
+  int16_t combined_data_raw[3] = {0};
+
+  combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);
+  combined_data_raw[1] = (int16_t)((raw_buf[2] << 8) | raw_buf[3]);
+  combined_data_raw[2] = (int16_t)((raw_buf[4] << 8) | raw_buf[5]);
+
+  float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
+
+  data->Accel_X = (float)(combined_data_raw[0] / accel_norm_const);
+  data->Accel_Y = (float)(combined_data_raw[1] / accel_norm_const);
+  data->Accel_Z = (float)(combined_data_raw[2] / accel_norm_const);
 }
