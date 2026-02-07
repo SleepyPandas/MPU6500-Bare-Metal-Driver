@@ -6,13 +6,12 @@ A from-scratch, register-level driver for the InvenSense MPU6500 6-axis IMU, run
 
 https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
 
-<!-- TODO: Photo of Physical setup maybe? -->
+## System Architecture & Data Pipeline
+
+<img width="2788" height="1216" alt="Slide 16_9 - 1 (2)" src="https://github.com/user-attachments/assets/4178657e-291d-46f2-bc64-77368fbd4292" />
+
 
 ---
-
-* [`Components/MPU6500/mpu6500.c`](Components/MPU6500/mpu6500.c)
-* [`Components/MPU6500/mpu6500.h`](Components/MPU6500/mpu6500.h)
-* [`Python Visualization Tool/MatPlotLib Dashboard.py`](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
 
 
 | Feature | Implementation |
@@ -49,7 +48,9 @@ MPU6500-Bare-Metal-Driver/
 ├── CMakeLists.txt
 └── STM32H503xx_FLASH.ld       # Linker script
 ```
-
+* [`Components/MPU6500/mpu6500.c`](Components/MPU6500/mpu6500.c)
+* [`Components/MPU6500/mpu6500.h`](Components/MPU6500/mpu6500.h)
+* [`Python Visualization Tool/MatPlotLib Dashboard.py`](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
 ---
 
 ## Technical Deep Dive
