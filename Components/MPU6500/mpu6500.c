@@ -259,7 +259,9 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
   // Collect samples to determine average offset (noise reduces with sqrt(N))
   // Using 512 samples
   for (int i = 0; i < 512; i++) {
-    status = MPU6500_Read_Gyro_Data(config, &gyro_data);
+    static uint8_t gyro_raw[6];
+    status = MPU6500_Read_Gyro_DMA(config, gyro_raw);
+    MPU6500_Process_Gyro_DMA(gyro_raw, &gyro_data);
     config->delay_ms(5);
     if (status == 0) {
       accumulator_data[0] += gyro_data.Gyro_X;

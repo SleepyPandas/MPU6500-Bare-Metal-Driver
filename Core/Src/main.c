@@ -117,7 +117,7 @@ int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
   I2C1_TX_FLAG = 0; // Clear flag BEFORE starting DMA (race condition)
   if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                             p_data, len) == HAL_OK) {
-    
+
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
@@ -131,7 +131,7 @@ int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
   if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                            p_data, len) == HAL_OK) {
     // Wait for DMA transfer to complete so driver can safely use the data
-    
+
     return 0;
   } else {
     HAL_I2C_ErrorCallback(&hi2c1);
@@ -186,10 +186,15 @@ int main(void) {
   MPU6500_Init(&config);
   MPU6500_Gyro_Data Gyro_Data = {0};
   MPU6500_Accel_Data Accel_Data = {0};
-  int8_t gyro_config[3] = {0};
+
+  static uint8_t gyro_raw[6];
+  static uint8_t accel_raw[6];
+
   char buffer[200];
 
-  // MPU6500_Gyro_Calibration(&config, gyro_config);
+  int8_t gyro_config[3] = {0, 0, 0};
+
+  MPU6500_Gyro_Calibration(&config, gyro_config);
 
   /* USER CODE END 2 */
 
@@ -199,18 +204,22 @@ int main(void) {
 
     switch (MPU6500_current_state) {
     case IDLE:
-      MPU6500_Read_Gyro_Data(&config, &Gyro_Data);
+      MPU6500_Read_Gyro_DMA(&config, gyro_raw);
       MPU6500_current_state = READ_GYRO;
+      
       break;
     case READ_GYRO:
       if (I2C1_RX_FLAG == 1) {
         I2C1_RX_FLAG = 0;
-        MPU6500_Read_Accel_Data(&config, &Accel_Data);
+        MPU6500_Process_Gyro_DMA(gyro_raw, &Gyro_Data);
+        MPU6500_Read_Accel_DMA(&config, accel_raw);
         MPU6500_current_state = READ_ACCEL;
       }
       break;
     case READ_ACCEL:
       if (I2C1_RX_FLAG == 1) {
+        I2C1_RX_FLAG = 0;
+        MPU6500_Process_Accel_DMA(accel_raw, &Accel_Data);
         MPU6500_current_state = DATA_READY;
       } else {
         break;
