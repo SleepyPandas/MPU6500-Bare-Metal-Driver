@@ -11,12 +11,10 @@
  * @author Anthony Hua ... Rather SleepyPandas
  */
 
-#include <math.h>
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "stm32h5xx_hal.h"
 #include <stdint.h>
 
 /** @brief MPU6500 I2C Address (Left Shifted) for Address Spacing + W/R bit */
@@ -33,14 +31,12 @@ extern "C" {
 /** @brief Registers 67 to 72 – Gyroscope Measurements */
 #define MPU6500_REG_GYRO_MEASURE 0x43U //
 
-
 typedef enum {
   MPU6500_ACC_SET_2G = 0x00,
   MPU6500_ACC_SET_4G = 0x08,  // 0000 1000
   MPU6500_ACC_SET_8G = 0x10,  // 0001 0000
   MPU6500_ACC_SET_16G = 0x18, // 0001 1000
 } Accel_Range;
-
 
 typedef enum {
   MPU6500_Gyro_SET_250 = 0x00,
@@ -50,9 +46,9 @@ typedef enum {
 } Gyro_Range;
 
 typedef struct {
-  int16_t Gyro_X; 
-  int16_t Gyro_Y; 
-  int16_t Gyro_Z; 
+  int16_t Gyro_X;
+  int16_t Gyro_Y;
+  int16_t Gyro_Z;
 } MPU6500_Gyro_Data;
 
 typedef struct {
@@ -60,7 +56,6 @@ typedef struct {
   float Accel_Y;
   float Accel_Z;
 } MPU6500_Accel_Data;
-
 
 typedef enum {
   MPU6500_Accel_2G = 0,
@@ -79,11 +74,11 @@ typedef enum {
 
 // Driver Configuration State
 typedef struct {
-  int8_t (*write_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
-  int8_t (*read_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data, uint16_t len);
-  void (*delay)(uint32_t milliseconds);
-
-
+  int8_t (*write_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                      uint16_t len);
+  int8_t (*read_DMA)(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
+                     uint16_t len);
+  void (*delay_ms)(uint32_t milliseconds);
 
   Accel_Calculation Accel_Setting;
   Gyro_Calculation Gyro_Setting;
@@ -95,35 +90,33 @@ typedef struct {
  *
  * Checks the device ID (WHO_AM_I) and wakes the device from sleep mode.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param who_am_i Pointer to store the retrieved WHO_AM_I register value.
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_Init(I2C_HandleTypeDef *hi2c, uint8_t *who_am_i);
+int8_t MPU6500_Init(MPU6500_Config *config);
 
 /**
  * @brief Sets the full-scale range for the accelerometer.
  *
  * Updates the ACCEL_CONFIG register and the internal driver configuration.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param range Desired accelerometer range (2G, 4G, 8G, 16G).
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_SetAccelRange(I2C_HandleTypeDef *hi2c,
-                                        Accel_Range range);
+int8_t MPU6500_SetAccelRange(MPU6500_Config *config, Accel_Range range);
 
 /**
  * @brief Sets the full-scale range for the gyroscope.
  *
  * Updates the GYRO_CONFIG register and the internal driver configuration.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param range Desired gyroscope range (250, 500, 1000, 2000 dps).
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
-                                           Gyro_Range range);
+int8_t MPU6500_SetRotationRange(MPU6500_Config *config, Gyro_Range range);
 
 /**
  * @brief Reads the current angular rate data from the gyroscope.
@@ -131,24 +124,24 @@ HAL_StatusTypeDef MPU6500_SetRotationRange(I2C_HandleTypeDef *hi2c,
  * Reads raw data registers, applies sensitivity scaling, and subtracts
  * calibration offsets.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param Gyro_Data Pointer to the struct where processed data will be stored.
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_Read_Gyro_Data(I2C_HandleTypeDef *hi2c,
-                                         MPU6500_Gyro_Data *Gyro_Data);
+int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
+                              MPU6500_Gyro_Data *Gyro_Data);
 
 /**
  * @brief Reads the current acceleration data from the accelerometer.
  *
  * Reads raw data registers and applies sensitivity scaling.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param Accel_Data Pointer to the struct where processed data will be stored.
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
-                                          MPU6500_Accel_Data *Accel_Data);
+int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
+                               MPU6500_Accel_Data *Accel_Data);
 
 /**
  * @brief Performs gyroscope calibration.
@@ -156,19 +149,15 @@ HAL_StatusTypeDef MPU6500_Read_Accel_Data(I2C_HandleTypeDef *hi2c,
  * Collects samples while the device is stationary to determine zero-rate
  * offsets. Updates the internal configuration with these offsets.
  *
- * @param hi2c Pointer to the I2C handle.
+ *
  * @param return_offset Pointer to an array of size 3 to store the calculated
  * offsets [X, Y, Z]. Can be NULL.
- * @return HAL_StatusTypeDef HAL_OK if successful, otherwise an error code.
+ * @return 0 for success, -1 for failure
  */
-HAL_StatusTypeDef MPU6500_Gyro_Calibration(I2C_HandleTypeDef *hi2c,
-                                           int8_t return_offset[3]);
+int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
+                                int8_t return_offset[3]);
 
-
-
-
-
-#ifdef __cplusplusso 
+#ifdef __cplusplusso
 }
 #endif
 
