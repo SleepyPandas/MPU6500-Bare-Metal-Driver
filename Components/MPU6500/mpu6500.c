@@ -15,15 +15,6 @@
 #include <stdint.h>
 #include <string.h>
 
-/* Global State --------------------------------------------------------------*/
-
-/** @brief Runtime driver state for sensitivity scaling and calibration. */
-MPU6500_Config MPUConfig = {
-    .Accel_Setting = MPU6500_Accel_2G,
-    .Gyro_Setting = MPU6500_Gyro_250,
-    .Gyro_Offset_Calibration = {0, 0, 0},
-};
-
 /* Sensitivity Lookup --------------------------------------------------------*/
 
 /** @brief Returns the accelerometer LSB/g value for the given range. */
@@ -126,19 +117,19 @@ int8_t MPU6500_SetAccelRange(MPU6500_Config *config, Accel_Range range) {
   /* Update internal sensitivity index */
   switch (range) {
   case MPU6500_ACC_SET_2G:
-    MPUConfig.Accel_Setting = MPU6500_Accel_2G;
+    config->Accel_Setting = MPU6500_Accel_2G;
     break;
   case MPU6500_ACC_SET_4G:
-    MPUConfig.Accel_Setting = MPU6500_Accel_4G;
+    config->Accel_Setting = MPU6500_Accel_4G;
     break;
   case MPU6500_ACC_SET_8G:
-    MPUConfig.Accel_Setting = MPU6500_Accel_8G;
+    config->Accel_Setting = MPU6500_Accel_8G;
     break;
   case MPU6500_ACC_SET_16G:
-    MPUConfig.Accel_Setting = MPU6500_Accel_16G;
+    config->Accel_Setting = MPU6500_Accel_16G;
     break;
   default:
-    MPUConfig.Accel_Setting = MPU6500_Accel_2G;
+    config->Accel_Setting = MPU6500_Accel_2G;
   }
 
   return mpu_status;
@@ -169,19 +160,19 @@ int8_t MPU6500_SetRotationRange(MPU6500_Config *config, Gyro_Range range) {
   /* Update internal sensitivity index */
   switch (range) {
   case MPU6500_Gyro_SET_250:
-    MPUConfig.Gyro_Setting = MPU6500_Gyro_250;
+    config->Gyro_Setting = MPU6500_Gyro_250;
     break;
   case MPU6500_Gyro_SET_500:
-    MPUConfig.Gyro_Setting = MPU6500_Gyro_500;
+    config->Gyro_Setting = MPU6500_Gyro_500;
     break;
   case MPU6500_Gyro_SET_1000:
-    MPUConfig.Gyro_Setting = MPU6500_Gyro_1000;
+    config->Gyro_Setting = MPU6500_Gyro_1000;
     break;
   case MPU6500_Gyro_SET_2000:
-    MPUConfig.Gyro_Setting = MPU6500_Gyro_2000;
+    config->Gyro_Setting = MPU6500_Gyro_2000;
     break;
   default:
-    MPUConfig.Gyro_Setting = MPU6500_Gyro_250;
+    config->Gyro_Setting = MPU6500_Gyro_250;
   }
 
   return mpu_status;
@@ -193,7 +184,7 @@ int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
                               MPU6500_Gyro_Data *Gyro_Data) {
   uint8_t raw_data[6] = {0};
   int8_t status;
-  float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
+  float gyro_norm_const = get_gyro_sensitivity(config->Gyro_Setting);
 
   status =
       config->read(MPU6500_I2C_ADDR, MPU6500_REG_GYRO_MEASURE, raw_data, 6);
@@ -207,11 +198,11 @@ int8_t MPU6500_Read_Gyro_Data(MPU6500_Config *config,
   combined_data_raw[2] = (int16_t)((raw_data[4] << 8) | raw_data[5]);
 
   Gyro_Data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
-                                MPUConfig.Gyro_Offset_Calibration[0]);
+                                config->Gyro_Offset_Calibration[0]);
   Gyro_Data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
-                                MPUConfig.Gyro_Offset_Calibration[1]);
+                                config->Gyro_Offset_Calibration[1]);
   Gyro_Data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
-                                MPUConfig.Gyro_Offset_Calibration[2]);
+                                config->Gyro_Offset_Calibration[2]);
 
   return status;
 }
@@ -220,7 +211,7 @@ int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
                                MPU6500_Accel_Data *Accel_Data) {
   uint8_t raw_data[6] = {0};
   int8_t status;
-  float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
+  float accel_norm_const = get_accel_sensitivity(config->Accel_Setting);
 
   status =
       config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, raw_data, 6);
@@ -258,7 +249,7 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
   for (int i = 0; i < 512; i++) {
     status = MPU6500_Read_Gyro_DMA(config, gyro_raw);
     config->delay_ms(1);
-    MPU6500_Process_Gyro_DMA(gyro_raw, &gyro_data);
+    MPU6500_Process_Gyro_DMA(config, gyro_raw, &gyro_data);
 
     if (status == 0) {
       accumulator_data[0] += gyro_data.Gyro_X;
@@ -281,8 +272,8 @@ int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
     memcpy(return_offset, offset_data, sizeof(offset_data));
   }
 
-  memcpy(MPUConfig.Gyro_Offset_Calibration, offset_data,
-         sizeof(MPUConfig.Gyro_Offset_Calibration));
+  memcpy(config->Gyro_Offset_Calibration, offset_data,
+         sizeof(config->Gyro_Offset_Calibration));
 
   return status;
 }
@@ -297,9 +288,9 @@ int8_t MPU6500_Read_Accel_DMA(MPU6500_Config *config, uint8_t raw_buf[6]) {
   return config->read(MPU6500_I2C_ADDR, MPU6500_REG_ACCEL_MEASURE, raw_buf, 6);
 }
 
-void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
+void MPU6500_Process_Gyro_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
                               MPU6500_Gyro_Data *data) {
-  float gyro_norm_const = get_gyro_sensitivity(MPUConfig.Gyro_Setting);
+  float gyro_norm_const = get_gyro_sensitivity(config->Gyro_Setting);
 
   int16_t combined_data_raw[3];
   combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);
@@ -307,16 +298,16 @@ void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
   combined_data_raw[2] = (int16_t)((raw_buf[4] << 8) | raw_buf[5]);
 
   data->Gyro_X = (int16_t)((combined_data_raw[0] / gyro_norm_const) +
-                           MPUConfig.Gyro_Offset_Calibration[0]);
+                           config->Gyro_Offset_Calibration[0]);
   data->Gyro_Y = (int16_t)((combined_data_raw[1] / gyro_norm_const) +
-                           MPUConfig.Gyro_Offset_Calibration[1]);
+                           config->Gyro_Offset_Calibration[1]);
   data->Gyro_Z = (int16_t)((combined_data_raw[2] / gyro_norm_const) +
-                           MPUConfig.Gyro_Offset_Calibration[2]);
+                           config->Gyro_Offset_Calibration[2]);
 }
 
-void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6],
+void MPU6500_Process_Accel_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
                                MPU6500_Accel_Data *data) {
-  float accel_norm_const = get_accel_sensitivity(MPUConfig.Accel_Setting);
+  float accel_norm_const = get_accel_sensitivity(config->Accel_Setting);
 
   int16_t combined_data_raw[3];
   combined_data_raw[0] = (int16_t)((raw_buf[0] << 8) | raw_buf[1]);

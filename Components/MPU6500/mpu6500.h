@@ -252,7 +252,7 @@ int8_t MPU6500_Read_Accel_DMA(MPU6500_Config *config, uint8_t raw_buf[6]);
  * @param raw_buf  6-byte buffer containing completed gyro register data.
  * @param data     Output struct for processed gyro values (dps).
  */
-void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
+void MPU6500_Process_Gyro_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
                               MPU6500_Gyro_Data *data);
 
 /**
@@ -264,7 +264,7 @@ void MPU6500_Process_Gyro_DMA(const uint8_t raw_buf[6],
  * @param raw_buf  6-byte buffer containing completed accel register data.
  * @param data     Output struct for processed accel values (g).
  */
-void MPU6500_Process_Accel_DMA(const uint8_t raw_buf[6],
+void MPU6500_Process_Accel_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
                                MPU6500_Accel_Data *data);
 
 #ifdef __cplusplus
