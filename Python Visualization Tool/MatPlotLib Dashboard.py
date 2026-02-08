@@ -1,3 +1,23 @@
+"""
+IMU Real-time Visualizer and 3D STL Orientation Tracker
+
+This script establishes a serial connection to read gyroscope and accelerometer 
+data, providing real-time 2D plotting and a 3D visualization of an STL model 
+using orientation integration.
+
+Data Format Expected:
+
+Example UART sprintf 
+Gyro: X |-8  |, Y|-2  |, Z|-1  | --- |Accel: X |-0.0791|, Y | 0.4978|, Z |-0.8350|
+Gyro: X |-8  |, Y|-2  |, Z|-1  | --- |Accel: X |-0.0784|, Y | 0.4956|, Z |-0.8372|
+Gyro: X |-8  |, Y|-2  |, Z|-2  | --- |Accel: X |-0.0737|, Y | 0.4966|, Z |-0.8438|
+Gyro: X |-8  |, Y|-2  |, Z|-1  | --- |Accel: X |-0.0754|, Y | 0.4954|, Z |-0.8364|
+
+* Please change the Regex to what you decide to log as *
+
+Author @Anthony Hua / SleepyPandas
+"""
+
 import math
 import time
 from pathlib import Path
@@ -19,6 +39,7 @@ except Exception:
     STL_AVAILABLE = False
 
 # --- CONFIGURATION ---
+# UPDATE TO YOUR BAUD_RATE AND COM PORT
 SERIAL_PORT = "COM3"
 BAUD_RATE = 115200
 MAX_POINTS = 300
@@ -236,7 +257,7 @@ def parse_line(line):
 
         # --- ACCEL INDICES (FIXED) ---
         # Previous error: I thought these were at 9,11,13.
-        # Correct indices are 8, 10, 12 based on your C code.
+        # Correct indices are 8, 10, 12 
         ax = float(parts[8].strip())
         ay = float(parts[10].strip())
         az = float(parts[12].strip())
