@@ -124,6 +124,7 @@ void HAL_I2C_ErrorCallback(I2C_HandleTypeDef *hi2c) {
 int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                        uint16_t len) {
   I2C1_TX_FLAG = 0;
+  I2C1_ERROR_FLAG = 0;
   if (HAL_I2C_Mem_Write_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                             p_data, len) == HAL_OK) {
     return 0;
@@ -137,6 +138,7 @@ int8_t stm32_write_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
 int8_t stm32_read_DMA(uint16_t dev_addr, uint16_t reg_addr, uint8_t *p_data,
                       uint16_t len) {
   I2C1_RX_FLAG = 0;
+  I2C1_ERROR_FLAG = 0;
   if (HAL_I2C_Mem_Read_DMA(&hi2c1, dev_addr, reg_addr, I2C_MEMADD_SIZE_8BIT,
                            p_data, len) == HAL_OK) {
     return 0;
@@ -203,7 +205,13 @@ int main(void) {
   char buffer[200];
 
   int8_t gyro_config[3] = {0, 0, 0};
+
+  MPU6500_SetAccelRange(&config, MPU6500_ACC_SET_16G);
+  MPU6500_SetRotationRange(&config, MPU6500_Gyro_SET_2000);
+
   MPU6500_Gyro_Calibration(&config, gyro_config);
+
+
 
   /* USER CODE END 2 */
 
@@ -222,29 +230,44 @@ int main(void) {
      */
     switch (MPU6500_current_state) {
     case IDLE:
-      MPU6500_Read_Gyro_DMA(&config, gyro_raw);
-      MPU6500_current_state = READ_GYRO;
+      if (MPU6500_Read_Gyro_DMA(&config, gyro_raw) == 0) {
+        MPU6500_current_state = READ_GYRO;
+      }
+      /* else: DMA start failed, stay IDLE and retry next loop */
       break;
 
     case READ_GYRO:
       if (I2C1_RX_FLAG == 1) {
         I2C1_RX_FLAG = 0;
-        MPU6500_Process_Gyro_DMA(gyro_raw, &Gyro_Data);
-        MPU6500_Read_Accel_DMA(&config, accel_raw);
-        MPU6500_current_state = READ_ACCEL;
+        if (I2C1_ERROR_FLAG != 0) {
+          MPU6500_current_state = IDLE;
+          break;
+        }
+        MPU6500_Process_Gyro_DMA(&config, gyro_raw, &Gyro_Data);
+        if (MPU6500_Read_Accel_DMA(&config, accel_raw) == 0) {
+          MPU6500_current_state = READ_ACCEL;
+        } else {
+          MPU6500_current_state = IDLE;
+        }
       }
       break;
 
     case READ_ACCEL:
       if (I2C1_RX_FLAG == 1) {
         I2C1_RX_FLAG = 0;
-        MPU6500_Process_Accel_DMA(accel_raw, &Accel_Data);
+        if (I2C1_ERROR_FLAG != 0) {
+          MPU6500_current_state = IDLE;
+          break;
+        }
+        MPU6500_Process_Accel_DMA(&config, accel_raw, &Accel_Data);
         MPU6500_current_state = DATA_READY;
-      } else {
-        break;
       }
+      break;
 
     case DATA_READY:
+      /* Demo/test blocking UART TX for simplicity. The implementation is up to the User. This is just a example.
+       * The driver's job ends here (data is in Gyro_Data / Accel_Data).
+       * Production code would use HAL_UART_Transmit_IT/DMA instead. */
       sprintf(buffer,
               "Gyro: X |%-4i|, Y|%-4i|, Z|%-4i| --- |  Accel: X |%7.4f|, Y "
               "|%7.4f|, Z |%7.4f| \r\n",
