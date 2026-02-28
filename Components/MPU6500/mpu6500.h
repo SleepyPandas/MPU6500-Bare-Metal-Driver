@@ -19,6 +19,18 @@ extern "C" {
 
 #include <stdint.h>
 
+/**
+ * @defgroup mpu6500_driver MPU6500 Driver
+ * @brief Public API for the MPU6500 bare-metal driver.
+ * @{
+ */
+
+/** @defgroup mpu6500_data_types Data Types
+ *  @brief Public data structures and enums.
+ *  @ingroup mpu6500_driver
+ *  @{
+ */
+
 /* I2C Address ---------------------------------------------------------------*/
 
 /** @brief MPU6500 I2C address (0x68), left-shifted for HAL compatibility. */
@@ -138,6 +150,14 @@ typedef struct {
   int8_t Gyro_Offset_Calibration[3];     /**< Gyro zero-rate offsets [X,Y,Z]. */
 } MPU6500_Config;
 
+/** @} */
+
+/** @defgroup mpu6500_basic_driver Basic Driver
+ *  @brief Blocking API functions.
+ *  @ingroup mpu6500_driver
+ *  @{
+ */
+
 /* Blocking API — assumes config->read()/write() return with data ready ------*/
 
 /**
@@ -209,6 +229,14 @@ int8_t MPU6500_Read_Accel_Data(MPU6500_Config *config,
 int8_t MPU6500_Gyro_Calibration(MPU6500_Config *config,
                                 int8_t return_offset[3]);
 
+/** @} */
+
+/** @defgroup mpu6500_nonblocking_driver Non-Blocking Driver
+ *  @brief Split-phase DMA/interrupt-friendly API functions.
+ *  @ingroup mpu6500_driver
+ *  @{
+ */
+
 /* Non-blocking (DMA / split-phase) API --------------------------------------*/
 
 /**
@@ -266,6 +294,10 @@ void MPU6500_Process_Gyro_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
  */
 void MPU6500_Process_Accel_DMA(MPU6500_Config *config, const uint8_t raw_buf[6],
                                MPU6500_Accel_Data *data);
+
+/** @} */
+
+/** @} */
 
 #ifdef __cplusplus
 }
