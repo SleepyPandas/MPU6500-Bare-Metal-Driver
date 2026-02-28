@@ -54,7 +54,7 @@ MPU6500-Bare-Metal-Driver/
 * [Components/MPU6500/mpu6500.h](Components/MPU6500/mpu6500.h)
 * [Python Visualization Tool/MatPlotLib Dashboard.py](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
 
-> [!NOTE]
+> [!IMPORTANT]
 > See the [Full Code Documentation](https://sleepypandas.github.io/MPU6500-Bare-Metal-Driver/files.html) for detailed API references.
 
 ---
