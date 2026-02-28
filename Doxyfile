@@ -16,14 +16,14 @@ HIDE_UNDOC_CLASSES     = YES
 HIDE_FRIEND_COMPOUNDS  = YES
 HIDE_IN_BODY_DOCS      = YES
 
-INPUT                  = README.md Components/MPU6500
+INPUT                  = docs/index.md README.md Components/MPU6500
 FILE_PATTERNS          = *.h *.c *.md
 RECURSIVE              = YES
 EXCLUDE                = build Core Drivers cmake "Python Visualization Tool"
 EXCLUDE_SYMLINKS       = NO
 EXCLUDE_PATTERNS       = */build/* */Core/* */Drivers/* */cmake/* */__pycache__/*
 
-USE_MDFILE_AS_MAINPAGE = README.md
+USE_MDFILE_AS_MAINPAGE = docs/index.md
 MARKDOWN_SUPPORT       = YES
 AUTOLINK_SUPPORT       = YES
 
