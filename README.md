@@ -50,9 +50,13 @@ MPU6500-Bare-Metal-Driver/
 ├── CMakeLists.txt
 └── STM32H503xx_FLASH.ld       # Linker script
 ```
-* [`Components/MPU6500/mpu6500.c`](Components/MPU6500/mpu6500.c)
-* [`Components/MPU6500/mpu6500.h`](Components/MPU6500/mpu6500.h)
-* [`Python Visualization Tool/MatPlotLib Dashboard.py`](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
+* [Components/MPU6500/mpu6500.c](Components/MPU6500/mpu6500.c)
+* [Components/MPU6500/mpu6500.h](Components/MPU6500/mpu6500.h)
+* [Python Visualization Tool/MatPlotLib Dashboard.py](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py)
+
+> [!NOTE]
+> See the [Full Code Documentation](https://sleepypandas.github.io/MPU6500-Bare-Metal-Driver/files.html) for detailed API references.
+
 ---
 
 ## Technical Deep Dive
@@ -210,7 +214,7 @@ The Python dashboard connects over serial and renders live sensor data at 75 ms 
 - **Configurable window** -- adjustable X-axis sample window via an on-screen textbox with debounced input
 
 
-**Source:** [`Python Visualization Tool/MatPlotLib Dashboard.py`](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py) | **Dependencies:** [`requirements.txt`](Python%20Visualization%20Tool/requirements.txt)
+**Source:** [Python Visualization Tool/MatPlotLib Dashboard.py](Python%20Visualization%20Tool/MatPlotLib%20Dashboard.py) | **Dependencies:** [requirements.txt](Python%20Visualization%20Tool/requirements.txt)
 
 ---
 
