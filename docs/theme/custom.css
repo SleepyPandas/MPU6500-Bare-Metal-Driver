@@ -5,9 +5,10 @@
 
 #projectname,
 #projectbrief {
-  white-space: nowrap;
+  white-space: normal !important;
   overflow: hidden;
-  text-overflow: ellipsis;
+  word-wrap: break-word;
+  overflow-wrap: break-word;
 }
 
 #projectname {
@@ -22,6 +23,68 @@
 
 #projectalign {
   min-width: 0;
+  width: calc(var(--side-nav-fixed-width) - 20px) !important;
+  max-width: calc(var(--side-nav-fixed-width) - 20px) !important;
+  overflow: hidden;
+}
+
+#titlearea table {
+  table-layout: fixed;
+  width: 100%;
+  max-width: var(--side-nav-fixed-width);
+}
+
+#titlearea {
+  max-width: var(--side-nav-fixed-width);
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#top {
+  width: var(--side-nav-fixed-width);
+  min-width: var(--side-nav-fixed-width);
+  max-width: var(--side-nav-fixed-width);
+}
+
+#side-nav {
+  width: var(--side-nav-fixed-width) !important;
+  min-width: var(--side-nav-fixed-width) !important;
+  max-width: var(--side-nav-fixed-width) !important;
+}
+
+#main-nav,
+#searchBoxPos1,
+#MSearchBox,
+#MSearchField,
+#MSearchBox span.left,
+#MSearchBox span.right {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+#main-nav {
+  width: 100%;
+  overflow: hidden;
+}
+
+#searchBoxPos1 {
+  left: var(--spacing-medium) !important;
+  right: var(--spacing-medium) !important;
+  width: auto !important;
+}
+
+#searchBoxPos2 {
+  padding-right: var(--spacing-medium);
+  box-sizing: border-box;
+}
+
+a.md__r_e_a_d_m_e\.html {
+  font-size: 0;
+}
+
+a.md__r_e_a_d_m_e\.html::after {
+  content: "MPU6500 README";
+  font-size: var(--navigation-font-size);
 }
 
 div.memproto {
@@ -30,10 +93,6 @@ div.memproto {
 
 table.memname {
   white-space: nowrap;
-}
-
-#side-nav {
-  min-width: 280px;
 }
 
 .contents img,
@@ -53,9 +112,5 @@ li.footer {
 @media (max-width: 1024px) {
   :root {
     --side-nav-fixed-width: 300px;
-  }
-
-  #side-nav {
-    min-width: 240px;
   }
 }
