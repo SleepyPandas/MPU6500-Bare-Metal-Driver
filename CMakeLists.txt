@@ -71,3 +71,16 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 
 #add support for float
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -u _printf_float)
+
+# Optional API documentation target (Doxygen)
+find_package(Doxygen QUIET)
+if(DOXYGEN_FOUND)
+    add_custom_target(docs
+        COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating API documentation with Doxygen"
+        VERBATIM
+    )
+else()
+    message(STATUS "Doxygen not found. 'docs' target will be unavailable.")
+endif()
