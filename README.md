@@ -10,7 +10,7 @@ https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
 
 ## System Architecture & Data Pipeline
 
-<img width="2788" height="1216" alt="Slide 16_9 - 1 (4)" src="https://github.com/user-attachments/assets/e3964ba7-5c05-400c-bcd2-70d4835915e1" />
+![System Architecture & Data Pipeline](https://github.com/user-attachments/assets/e3964ba7-5c05-400c-bcd2-70d4835915e1)
 
 
 
