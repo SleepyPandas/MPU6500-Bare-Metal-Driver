@@ -26,6 +26,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y doxygen graphviz
 
+      - name: Download doxygen-awesome-css theme
+        run: |
+          mkdir -p docs/theme
+          BASE="https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/v2.3.4"
+          curl -fsSL "$BASE/doxygen-awesome.css"                  -o docs/theme/doxygen-awesome.css
+          curl -fsSL "$BASE/doxygen-awesome-sidebar-only.css"      -o docs/theme/doxygen-awesome-sidebar-only.css
+          curl -fsSL "$BASE/doxygen-awesome-darkmode-toggle.js"    -o docs/theme/doxygen-awesome-darkmode-toggle.js
+
       - name: Generate documentation
         run: doxygen Doxyfile
 
