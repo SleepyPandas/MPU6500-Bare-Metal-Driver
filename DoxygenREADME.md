@@ -1,8 +1,10 @@
-# MPU6500 Bare-Metal IMU Driver
+# MPU6500 Github README!
 
 ![Language](https://img.shields.io/badge/Language-C-white) ![Architecture](https://img.shields.io/badge/Architecture-Bare_Metal-blue) ![Platform](https://img.shields.io/badge/Platform-STM32_ArmCortex_M33-42f5da) ![Sensor](https://img.shields.io/badge/Sensor-MPU6500-a442f5) ![I/O](https://img.shields.io/badge/I%2FO-I2C_DMA-f7b80a) ![Build](https://img.shields.io/badge/Build-CMake-e81526)
 
 A from-scratch, register-level driver for the InvenSense MPU6500 6-axis IMU, running on an STM32H503RB (Arm Cortex-M33) with no external sensor libraries. Features a platform-agnostic architecture, non-blocking DMA transfers, automated gyroscope calibration, and a real-time Python visualization dashboard.
+
+> **Note:** For the project README used on GitHub, see [README.md](https://github.com/SleepyPandas/MPU6500-Bare-Metal-Driver/blob/main/README.md).
 
 https://github.com/user-attachments/assets/083083cf-58ff-4d32-9ef0-c8d85db2905d
 

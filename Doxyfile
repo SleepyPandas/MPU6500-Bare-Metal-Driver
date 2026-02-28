@@ -1,0 +1,60 @@
+# Doxygen configuration for MPU6500 Bare-Metal Driver API docs
+
+PROJECT_NAME           = "MPU6500 Bare-Metal Driver"
+PROJECT_BRIEF          = "Public API reference for the MPU6500 driver"
+OUTPUT_DIRECTORY       = docs/doxygen
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+
+OPTIMIZE_OUTPUT_FOR_C  = YES
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = NO
+EXTRACT_STATIC         = NO
+EXTRACT_LOCAL_CLASSES  = NO
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = YES
+HIDE_FRIEND_COMPOUNDS  = YES
+HIDE_IN_BODY_DOCS      = YES
+
+INPUT                  = docs/index.md DoxygenREADME.md Components/MPU6500
+FILE_PATTERNS          = *.h *.c *.md
+RECURSIVE              = YES
+EXCLUDE                = build Core Drivers cmake "Python Visualization Tool"
+EXCLUDE_SYMLINKS       = NO
+EXCLUDE_PATTERNS       = */build/* */Core/* */Drivers/* */cmake/* */__pycache__/*
+
+USE_MDFILE_AS_MAINPAGE = docs/index.md
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+
+SOURCE_BROWSER         = NO
+INLINE_SOURCES         = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+HTML_FILE_EXTENSION    = .html
+HTML_COLORSTYLE        = LIGHT
+HTML_DYNAMIC_MENUS     = YES
+
+# doxygen-awesome-css theme
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_EXTRA_STYLESHEET  = docs/theme/doxygen-awesome.css \
+                         docs/theme/doxygen-awesome-sidebar-only.css \
+                         docs/theme/custom.css
+HTML_EXTRA_FILES       = docs/theme/doxygen-awesome-darkmode-toggle.js
+
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+GENERATE_DOCBOOK       = NO
+
+WARNINGS               = YES
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_NO_PARAMDOC       = NO
+QUIET                  = NO
