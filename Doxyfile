@@ -16,7 +16,7 @@ HIDE_UNDOC_CLASSES     = YES
 HIDE_FRIEND_COMPOUNDS  = YES
 HIDE_IN_BODY_DOCS      = YES
 
-INPUT                  = docs/index.md README.md Components/MPU6500
+INPUT                  = docs/index.md DoxygenREADME.md Components/MPU6500
 FILE_PATTERNS          = *.h *.c *.md
 RECURSIVE              = YES
 EXCLUDE                = build Core Drivers cmake "Python Visualization Tool"

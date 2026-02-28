@@ -78,15 +78,6 @@
   box-sizing: border-box;
 }
 
-a.md__r_e_a_d_m_e\.html {
-  font-size: 0;
-}
-
-a.md__r_e_a_d_m_e\.html::after {
-  content: "MPU6500 README";
-  font-size: var(--navigation-font-size);
-}
-
 div.memproto {
   overflow-x: auto;
 }
