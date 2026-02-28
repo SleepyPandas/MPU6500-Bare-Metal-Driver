@@ -35,7 +35,9 @@ jobs:
           curl -fsSL "$BASE/doxygen-awesome-darkmode-toggle.js"    -o docs/theme/doxygen-awesome-darkmode-toggle.js
 
       - name: Generate documentation
-        run: doxygen Doxyfile
+        run: |
+          rm -rf docs/doxygen/html
+          doxygen Doxyfile
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

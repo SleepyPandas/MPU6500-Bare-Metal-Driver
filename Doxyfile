@@ -35,7 +35,7 @@ REFERENCES_RELATION    = YES
 GENERATE_HTML          = YES
 HTML_OUTPUT            = html
 HTML_FILE_EXTENSION    = .html
-HTML_COLORSTYLE        = AUTO_DARK
+HTML_COLORSTYLE        = LIGHT
 HTML_DYNAMIC_MENUS     = YES
 
 # doxygen-awesome-css theme
@@ -43,9 +43,9 @@ GENERATE_TREEVIEW      = YES
 DISABLE_INDEX          = NO
 FULL_SIDEBAR           = NO
 HTML_EXTRA_STYLESHEET  = docs/theme/doxygen-awesome.css \
-                         docs/theme/doxygen-awesome-sidebar-only.css
+                         docs/theme/doxygen-awesome-sidebar-only.css \
+                         docs/theme/custom.css
 HTML_EXTRA_FILES       = docs/theme/doxygen-awesome-darkmode-toggle.js
-HTML_HEADER            = docs/theme/header.html
 
 GENERATE_LATEX         = NO
 GENERATE_RTF           = NO
