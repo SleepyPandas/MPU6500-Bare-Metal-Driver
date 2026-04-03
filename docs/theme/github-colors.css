@@ -1,0 +1,168 @@
+/**
+ * GitHub Primer–inspired palette overrides for doxygen-awesome-css.
+ * Loaded after theme CSS so these variables win.
+ */
+
+html {
+    --primary-color: #0969da;
+    --primary-dark-color: #0550ae;
+    --primary-light-color: #54aeff;
+    --on-primary-color: #ffffff;
+    --link-color: var(--primary-color);
+
+    --page-background-color: #ffffff;
+    --page-foreground-color: #1f2328;
+    --page-secondary-foreground-color: #656d76;
+
+    --separator-color: #d0d7de;
+    --odd-color: rgba(31, 35, 40, 0.04);
+
+    --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+    --font-family-monospace: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+    --border-radius-large: 6px;
+    --border-radius-medium: 6px;
+    --border-radius-small: 4px;
+
+    --box-shadow: 0 1px 0 rgba(31, 35, 40, 0.04);
+
+    --blockquote-background: #f6f8fa;
+    --blockquote-foreground: #57606a;
+
+    --tablehead-background: #f6f8fa;
+    --tablehead-foreground: var(--page-foreground-color);
+
+    --menu-selected-background: rgba(31, 35, 40, 0.06);
+    --menu-focus-background: var(--primary-color);
+    --menu-focus-foreground: #ffffff;
+
+    --code-background: #f6f8fa;
+    --section-code-background: rgba(31, 35, 40, 0.06);
+    --section-code-border: #d0d7de;
+
+    --fragment-background: #f6f8fa;
+    --fragment-foreground: #1f2328;
+    --fragment-keyword: #cf222e;
+    --fragment-keywordtype: #953800;
+    --fragment-keywordflow: #cf222e;
+    --fragment-token: #0550ae;
+    --fragment-comment: #57606a;
+    --fragment-link: #0969da;
+    --fragment-preprocessor: #953800;
+    --fragment-linenumber-color: #656d76;
+    --fragment-linenumber-background: #eaeef2;
+    --fragment-linenumber-border: #d0d7de;
+
+    --side-nav-background: #f6f8fa;
+    --side-nav-foreground: var(--page-foreground-color);
+
+    --header-background: var(--page-background-color);
+    --header-foreground: var(--page-foreground-color);
+
+    --note-color: #ddf4ff;
+    --note-color-dark: #0969da;
+    --note-color-darker: #0550ae;
+    --warning-color: #fff8c5;
+    --warning-color-dark: #9a6700;
+    --warning-color-darker: #7d4e00;
+}
+
+@media (prefers-color-scheme: dark) {
+    html:not(.light-mode) {
+        --primary-color: #4493f8;
+        --primary-dark-color: #1f6feb;
+        --primary-light-color: #79c0ff;
+        --link-color: var(--primary-color);
+
+        --page-background-color: #0d1117;
+        --page-foreground-color: #e6edf3;
+        --page-secondary-foreground-color: #8d96a0;
+
+        --separator-color: #30363d;
+        --odd-color: rgba(230, 237, 243, 0.04);
+
+        --box-shadow: 0 1px 0 rgba(230, 237, 243, 0.06);
+
+        --blockquote-background: #161b22;
+        --blockquote-foreground: #8d96a0;
+
+        --tablehead-background: #161b22;
+
+        --menu-selected-background: rgba(230, 237, 243, 0.08);
+
+        --code-background: #161b22;
+        --section-code-background: rgba(230, 237, 243, 0.08);
+        --section-code-border: #30363d;
+
+        --fragment-background: #161b22;
+        --fragment-foreground: #e6edf3;
+        --fragment-keyword: #ff7b72;
+        --fragment-keywordtype: #ffa657;
+        --fragment-keywordflow: #ff7b72;
+        --fragment-token: #79c0ff;
+        --fragment-comment: #8b949e;
+        --fragment-link: #58a6ff;
+        --fragment-preprocessor: #ffa657;
+        --fragment-linenumber-color: #8b949e;
+        --fragment-linenumber-background: #0d1117;
+        --fragment-linenumber-border: #30363d;
+
+        --side-nav-background: #161b22;
+
+        --note-color: #0c2d6b;
+        --note-color-dark: #4493f8;
+        --note-color-darker: #a5d6ff;
+        --warning-color: #3d2f00;
+        --warning-color-dark: #d4a72c;
+        --warning-color-darker: #f8e3a1;
+    }
+}
+
+html.dark-mode {
+    --primary-color: #4493f8;
+    --primary-dark-color: #1f6feb;
+    --primary-light-color: #79c0ff;
+    --link-color: var(--primary-color);
+
+    --page-background-color: #0d1117;
+    --page-foreground-color: #e6edf3;
+    --page-secondary-foreground-color: #8d96a0;
+
+    --separator-color: #30363d;
+    --odd-color: rgba(230, 237, 243, 0.04);
+
+    --box-shadow: 0 1px 0 rgba(230, 237, 243, 0.06);
+
+    --blockquote-background: #161b22;
+    --blockquote-foreground: #8d96a0;
+
+    --tablehead-background: #161b22;
+
+    --menu-selected-background: rgba(230, 237, 243, 0.08);
+
+    --code-background: #161b22;
+    --section-code-background: rgba(230, 237, 243, 0.08);
+    --section-code-border: #30363d;
+
+    --fragment-background: #161b22;
+    --fragment-foreground: #e6edf3;
+    --fragment-keyword: #ff7b72;
+    --fragment-keywordtype: #ffa657;
+    --fragment-keywordflow: #ff7b72;
+    --fragment-token: #79c0ff;
+    --fragment-comment: #8b949e;
+    --fragment-link: #58a6ff;
+    --fragment-preprocessor: #ffa657;
+    --fragment-linenumber-color: #8b949e;
+    --fragment-linenumber-background: #0d1117;
+    --fragment-linenumber-border: #30363d;
+
+    --side-nav-background: #161b22;
+
+    --note-color: #0c2d6b;
+    --note-color-dark: #4493f8;
+    --note-color-darker: #a5d6ff;
+    --warning-color: #3d2f00;
+    --warning-color-dark: #d4a72c;
+    --warning-color-darker: #f8e3a1;
+}

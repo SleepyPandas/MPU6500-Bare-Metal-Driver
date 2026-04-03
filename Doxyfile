@@ -1,5 +1,6 @@
-# Minimal Doxygen layout (stock HTML): run `doxygen` from the repository root.
-# Output: docs/html/
+# Run `doxygen` from the repository root. Output: docs/html/
+# Theme: doxygen-awesome-css v2.4.2 (https://github.com/jothepro/doxygen-awesome-css)
+# Keep HTML_COLORSTYLE=LIGHT and FULL_SIDEBAR=NO (required by that theme).
 
 PROJECT_NAME           = "MPU6500 Bare-Metal Driver"
 PROJECT_BRIEF          = "Public API reference for the MPU6500 driver"
@@ -35,9 +36,21 @@ REFERENCED_BY_RELATION = YES
 REFERENCES_RELATION    = YES
 
 GENERATE_HTML          = YES
-LAYOUT_FILE            = DoxygenLayout.xml
 HTML_FILE_EXTENSION    = .html
-SEARCHENGINE           = NO
+HTML_HEADER            = docs/theme/header.html
+HTML_COLORSTYLE        = LIGHT
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COPY_CLIPBOARD    = NO
+HTML_EXTRA_STYLESHEET  = docs/theme/doxygen-awesome.css \
+                         docs/theme/doxygen-awesome-sidebar-only.css \
+                         docs/theme/doxygen-awesome-sidebar-only-darkmode-toggle.css \
+                         docs/theme/github-colors.css
+HTML_EXTRA_FILES       = docs/theme/doxygen-awesome-darkmode-toggle.js \
+                         docs/theme/doxygen-awesome-fragment-copy-button.js
+LAYOUT_FILE            = DoxygenLayout.xml
+SEARCHENGINE           = YES
 
 GENERATE_LATEX         = NO
 GENERATE_RTF           = NO

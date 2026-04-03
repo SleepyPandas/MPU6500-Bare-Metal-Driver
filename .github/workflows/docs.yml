@@ -30,6 +30,7 @@ jobs:
         run: |
           rm -rf docs/html
           doxygen Doxyfile
+          touch docs/html/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
