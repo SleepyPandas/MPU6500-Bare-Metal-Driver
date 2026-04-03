@@ -372,9 +372,5 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Doxygen generated output and downloaded theme assets
-docs/doxygen/
-docs/theme/doxygen-awesome.css
-docs/theme/doxygen-awesome-sidebar-only.css
-docs/theme/doxygen-awesome-darkmode-toggle.js
-!docs/theme/custom.css
+# Doxygen generated HTML (doxygen from repo root)
+docs/html/

@@ -72,14 +72,10 @@ target_link_libraries(${CMAKE_PROJECT_NAME}
 #add support for float
 target_link_options(${CMAKE_PROJECT_NAME} PRIVATE -u _printf_float)
 
-# Optional API documentation target (Doxygen + doxygen-awesome-css theme)
+# Optional API documentation target (stock Doxygen HTML -> docs/html/)
 find_package(Doxygen QUIET)
 if(DOXYGEN_FOUND)
     add_custom_target(docs
-        COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_SOURCE_DIR}/docs/theme
-        COMMAND ${CMAKE_COMMAND}
-            -DTHEME_DIR=${CMAKE_SOURCE_DIR}/docs/theme
-            -P ${CMAKE_SOURCE_DIR}/cmake/download_theme.cmake
         COMMAND ${DOXYGEN_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Doxyfile
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Generating API documentation with Doxygen"
