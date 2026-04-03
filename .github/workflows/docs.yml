@@ -24,25 +24,18 @@ jobs:
       - name: Install Doxygen
         run: |
           sudo apt-get update
-          sudo apt-get install -y doxygen graphviz
-
-      - name: Download doxygen-awesome-css theme
-        run: |
-          mkdir -p docs/theme
-          BASE="https://raw.githubusercontent.com/jothepro/doxygen-awesome-css/v2.3.4"
-          curl -fsSL "$BASE/doxygen-awesome.css"                  -o docs/theme/doxygen-awesome.css
-          curl -fsSL "$BASE/doxygen-awesome-sidebar-only.css"      -o docs/theme/doxygen-awesome-sidebar-only.css
-          curl -fsSL "$BASE/doxygen-awesome-darkmode-toggle.js"    -o docs/theme/doxygen-awesome-darkmode-toggle.js
+          sudo apt-get install -y doxygen
 
       - name: Generate documentation
         run: |
-          rm -rf docs/doxygen/html
+          rm -rf docs/html
           doxygen Doxyfile
+          touch docs/html/.nojekyll
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: docs/doxygen/html
+          path: docs/html
 
   deploy:
     runs-on: ubuntu-latest
